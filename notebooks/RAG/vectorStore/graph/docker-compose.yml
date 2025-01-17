@@ -1,0 +1,15 @@
+version: "3"
+services:
+  neo4j:
+    image: neo4j:latest # 원하는 버전을 지정할 수도 있습니다. 예: neo4j:5.5
+    container_name: neo4j # 컨테이너 이름 지정(선택 사항)
+    environment:
+      - NEO4J_AUTH=neo4j/test1234 # "계정/비밀번호" 설정 (형식: neo4j/<비밀번호>)
+      # - NEO4J_dbms_memory_pagecache_size=2G  # 메모리 설정(선택)
+      # - NEO4J_dbms_memory_heap_initial__size=2G
+      # - NEO4J_dbms_memory_heap_max__size=4G
+    ports:
+      - "7474:7474" # HTTP 인터페이스 포트
+      - "7687:7687" # Bolt 프로토콜 포트
+    volumes:
+      - ./neo4j_data:/data # 로컬 ./neo4j_data 디렉토리를 Neo4j /data 디렉토리에 마운트
