@@ -23,6 +23,14 @@ services:
       memlock:
         soft: -1
         hard: -1
+    deploy:
+      resources:
+        limits:
+          memory: 4096M # 최대 512MB RAM 사용
+        reservations:
+          memory: 1024M # 최소 256MB RAM 예약
+    cap_add:
+      - IPC_LOCK
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.16.2
@@ -41,3 +49,4 @@ services:
 networks:
   es-network:
     driver: bridge
+## sudo chmod -R 775 ./elastic/es01/data
