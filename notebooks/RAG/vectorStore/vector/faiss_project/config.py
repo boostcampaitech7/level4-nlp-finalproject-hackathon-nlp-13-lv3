@@ -5,5 +5,8 @@ EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 PICKLE_FILE_PATH = "data/documents.pkl"
 FAISS_INDEX_PATH = "data/faiss_index"
 
+#임베딩 모델 따라 변경
+FAISS_DIMENSION = 384 
+
 # 검색 결과 개수 설정
 TOP_K_RESULTS = 5

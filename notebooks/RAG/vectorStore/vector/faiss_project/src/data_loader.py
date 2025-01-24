@@ -9,8 +9,5 @@ def load_documents():
 
     print(f"총 {len(documents)}개의 문서가 로드되었습니다.")
 
-    # 샘플 데이터 출력
-    for i, doc in enumerate(documents[:100]):
-        print(f"\n문서 {i + 1} 내용:\n{doc.page_content}")
 
     return documents

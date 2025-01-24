@@ -1,22 +1,81 @@
+import os
 import faiss
+import numpy as np
 from sentence_transformers import SentenceTransformer
-from config import EMBEDDING_MODEL, FAISS_INDEX_PATH
 from src.data_loader import load_documents
+import pickle
+from config import FAISS_INDEX_PATH, FAISS_DIMENSION, PICKLE_FILE_PATH
 
+# 절대 경로 변환 (보완)
+FAISS_INDEX_PATH = os.path.abspath(FAISS_INDEX_PATH)
 
-def create_faiss_index():
-    """FAISS 인덱스 생성 및 저장"""
+# 모델 로딩 (384차원 모델)
+model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+
+def create_faiss_index(index_name: str, algorithm: int):
+    """
+    FAISS 인덱스를 생성하고, 주어진 텍스트에 대한 벡터를 인덱스에 추가하는 함수.
+    """
+
+    # 문서 로드
     documents = load_documents()
-    model = SentenceTransformer(EMBEDDING_MODEL)
 
-    # 문서 임베딩 생성
-    embeddings = model.encode([doc.page_content for doc in documents], convert_to_numpy=True)
+    # 텍스트 추출 (page_content만 사용)
+    texts = [doc.page_content for doc in documents]  # 데이터 클래스 형태로 접근
 
-    # FAISS 인덱스 생성
-    dimension = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dimension)
-    index.add(embeddings)
+    # 텍스트를 한 번에 임베딩
+    embeddings = model.encode(texts, convert_to_numpy=True)
 
-    # 인덱스 저장
-    faiss.write_index(index, FAISS_INDEX_PATH)
-    print(f"FAISS 인덱스가 '{FAISS_INDEX_PATH}'에 저장되었습니다.")
+    # 처음 10개의 문서 출력 (처음 100자만 표시)
+    for i, text in enumerate(texts[:10]):
+        print(f"문서 {i+1}: {text[:100]}...")  # 문서의 처음 100자만 출력
+
+    # 기존 경로가 파일이면 삭제
+    if os.path.isfile(FAISS_INDEX_PATH):
+        os.remove(FAISS_INDEX_PATH)
+
+    # 디렉토리 존재 여부 확인 후 생성
+    if not os.path.exists(FAISS_INDEX_PATH):
+        try:
+            os.makedirs(FAISS_INDEX_PATH)
+        except Exception as e:
+            return False, f"디렉토리 생성 실패: {str(e)}"
+
+    index_file = os.path.join(FAISS_INDEX_PATH, f"{index_name}.index")
+
+    # 기존 인덱스 삭제 로직 추가
+    if os.path.exists(index_file):
+        try:
+            os.remove(index_file)
+            print(f"기존 인덱스({index_name})가 삭제되었습니다.")
+        except Exception as e:
+            return False, f"기존 인덱스를 삭제하는 중 오류 발생: {str(e)}"
+
+    try:
+        # 알고리즘 선택에 따른 인덱스 생성
+        if algorithm == 1:
+            index = faiss.IndexFlatL2(FAISS_DIMENSION)  # 384 차원
+        elif algorithm == 2:
+            nlist = 100
+            quantizer = faiss.IndexFlatL2(FAISS_DIMENSION)  # 384 차원
+            index = faiss.IndexIVFFlat(quantizer, FAISS_DIMENSION, nlist, faiss.METRIC_L2)
+            index.train(np.random.random((1000, FAISS_DIMENSION)).astype('float32'))
+        elif algorithm == 3:
+            index = faiss.IndexHNSWFlat(FAISS_DIMENSION, 32)  # 384 차원
+        else:
+            return False, "잘못된 알고리즘 번호입니다."  # 잘못된 알고리즘 번호 처리
+
+        # 벡터를 인덱스에 추가
+        index.add(embeddings)
+        print(f"{len(embeddings)}개의 벡터가 인덱스에 추가되었습니다.")
+
+        # 인덱스에 추가된 벡터 수 출력
+        print(f"현재 인덱스에 저장된 총 벡터 수: {index.ntotal}")
+
+        # 인덱스를 파일로 저장
+        faiss.write_index(index, index_file)
+        print(f"FAISS 인덱스 생성 완료: {index_file}")
+        return True, f"인덱스를 성공적으로 생성하였습니다: {index_name}"
+
+    except Exception as e:
+        return False, f"인덱스 생성 중 오류 발생: {str(e)}"
