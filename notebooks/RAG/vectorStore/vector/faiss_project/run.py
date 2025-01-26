@@ -100,6 +100,7 @@ def create_index(request: IndexCreateRequest, request_obj: Request):
 
     except Exception as e:
         logger.error(f"서버 내부 오류: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"서버 내부 오류: {str(e)}")
 
 
@@ -123,6 +124,7 @@ def check_index_exists(index: str, request_obj: Request):
 
     except Exception as e:
         logger.error(f"서버 내부 오류: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"에러가 발생하였습니다 -> {str(e)}")
 
 
@@ -147,6 +149,7 @@ def delete_index(index: str, request_obj: Request):
 
     except Exception as e:
         logger.error(f"서버 내부 오류: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"에러가 발생하였습니다 -> {str(e)}")
 
 
@@ -180,6 +183,7 @@ def insert_data(request: DataInsertRequest, request_obj: Request):
 
     except Exception as e:
         logger.error(f"데이터 삽입 실패: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail="데이터 삽입에 실패하였습니다.")
 
 
@@ -233,6 +237,7 @@ def search_by_query(request: QueryRequest, request_obj: Request):
 
     except Exception as e:
         logger.error(f"쿼리 조회 실패: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail="쿼리 조회에 실패하였습니다.")
 
 
@@ -271,6 +276,7 @@ def search_by_vector(request: VectorQueryRequest, request_obj: Request):
 
     except Exception as e:
         logger.error(f"벡터 조회 실패: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail="벡터 조회에 실패하였습니다.")
 
 
