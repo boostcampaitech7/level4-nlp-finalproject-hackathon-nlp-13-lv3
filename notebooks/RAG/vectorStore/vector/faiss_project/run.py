@@ -5,6 +5,10 @@ import uvicorn
 import os
 import faiss
 import numpy as np
+import argparse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+import traceback
 
 from src.data_loader import load_documents
 from src.vectorizer import create_faiss_index
