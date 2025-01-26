@@ -55,7 +55,8 @@ def create_index(request: IndexCreateRequest):
         logger.info(f"FAISS 인덱스 생성 요청: {request.index}, 알고리즘: {request.algorithm}")
 
         # 인덱스 파일 경로
-        index_path = os.path.join(FAISS_INDEX_PATH, f"{request.index}.index")
+        index_path = os.path.join(
+            settings.FAISS_INDEX_FOLDER_PATH, f"{request.index}.index")
 
         # 이미 인덱스가 존재하는지 확인
         if os.path.exists(index_path):
@@ -85,7 +86,8 @@ def check_index_exists(index: str):
         logger.info(f"인덱스 조회 요청: {index}")
 
         # 인덱스 파일 경로
-        index_path = os.path.join(FAISS_INDEX_PATH, f"{index}.index")
+        index_path = os.path.join(
+            settings.FAISS_INDEX_FOLDER_PATH, f"{index}.index")
 
         if os.path.exists(index_path):
             return {"status": "ok", "message": "해당 인덱스가 존재합니다.", "index": index}
@@ -106,7 +108,8 @@ def delete_index(index: str):
         logger.info(f"인덱스 삭제 요청: {index}")
 
         # 인덱스 파일 경로
-        index_path = os.path.join(FAISS_INDEX_PATH, f"{index}.index")
+        index_path = os.path.join(
+            settings.FAISS_INDEX_FOLDER_PATH, f"{index}.index")
 
         if os.path.exists(index_path):
             os.remove(index_path)
