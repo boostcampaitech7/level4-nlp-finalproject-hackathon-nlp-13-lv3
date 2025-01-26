@@ -19,21 +19,17 @@ def create_faiss_index(index_name: str, algorithm: int, dimension: int):
     """
 
     # 문서 로드
-    documents = load_documents()
+    # documents = load_documents()
 
     # 텍스트 추출 (page_content만 사용)
-    texts = [doc.page_content for doc in documents]  # 데이터 클래스 형태로 접근
+    # texts = [doc.page_content for doc in documents]  # 데이터 클래스 형태로 접근
 
-    # 텍스트를 한 번에 임베딩
-    embeddings = model.encode(texts, convert_to_numpy=True)
+    # # 텍스트를 한 번에 임베딩
+    # embeddings = model.encode(texts, convert_to_numpy=True)
 
     # 처음 10개의 문서 출력 (처음 100자만 표시)
-    for i, text in enumerate(texts[:10]):
-        print(f"문서 {i+1}: {text[:100]}...")  # 문서의 처음 100자만 출력
-
-    # 기존 경로가 파일이면 삭제
-    if os.path.isfile(FAISS_INDEX_PATH):
-        os.remove(FAISS_INDEX_PATH)
+    # for i, text in enumerate(texts[:10]):
+    #     print(f"문서 {i+1}: {text[:100]}...")  # 문서의 처음 100자만 출력
 
     # 디렉토리 존재 여부 확인 후 생성
     if not os.path.exists(FAISS_INDEX_FOLDER_PATH):
@@ -61,9 +57,9 @@ def create_faiss_index(index_name: str, algorithm: int, dimension: int):
         else:
             return False, "잘못된 알고리즘 번호입니다."  # 잘못된 알고리즘 번호 처리
 
-        # 벡터를 인덱스에 추가
-        index.add(embeddings)
-        print(f"{len(embeddings)}개의 벡터가 인덱스에 추가되었습니다.")
+        # # 벡터를 인덱스에 추가
+        # index.add(embeddings)
+        # print(f"{len(embeddings)}개의 벡터가 인덱스에 추가되었습니다.")
 
         # 인덱스에 추가된 벡터 수 출력
         print(f"현재 인덱스에 저장된 총 벡터 수: {index.ntotal}")
