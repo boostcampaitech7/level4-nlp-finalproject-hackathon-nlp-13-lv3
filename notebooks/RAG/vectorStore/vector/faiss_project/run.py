@@ -76,7 +76,8 @@ def create_index(request: IndexCreateRequest, request_obj: Request):
     """
     logger = request_obj.state.logger
     try:
-        logger.info(f"FAISS 인덱스 생성 요청: {request.index}, 알고리즘: {request.algorithm}")
+        logger.info(
+            f"FAISS 인덱스 생성 요청: {request.index}, 알고리즘: {request.algorithm} 차원 수 {request.dimension}")
 
         # 인덱스 파일 경로
         index_path = os.path.join(
@@ -88,7 +89,8 @@ def create_index(request: IndexCreateRequest, request_obj: Request):
             raise HTTPException(status_code=400, detail="현재 같은 인덱스가 존재합니다.")
 
         # FAISS 인덱스 생성
-        success, message = create_faiss_index(request.index, request.algorithm)
+        success, message = create_faiss_index(
+            request.index, request.algorithm, request.dimension)
 
         if not success:
             logger.error(f"인덱스 생성 실패: {message}")
