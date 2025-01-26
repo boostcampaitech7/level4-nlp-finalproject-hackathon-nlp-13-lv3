@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     TOP_K_RESULTS: int = 5
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     PICKLE_FILE_PATH: str = "data/documents.pkl"
-
+    API_KEY: str = ''
     model_config = SettingsConfigDict(env_file='.env')
 
     def model_post_init(self, __context):
