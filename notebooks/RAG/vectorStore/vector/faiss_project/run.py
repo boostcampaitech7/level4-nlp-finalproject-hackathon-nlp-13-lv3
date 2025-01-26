@@ -281,4 +281,8 @@ def search_by_vector(request: VectorQueryRequest, request_obj: Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8060)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=8060,
+                        help="Port number for the server")
+    args = parser.parse_args()
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
