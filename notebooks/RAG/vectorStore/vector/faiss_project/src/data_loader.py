@@ -1,5 +1,5 @@
 import pickle
-from config import PICKLE_FILE_PATH
+from config import settings
 
 
 def load_documents():

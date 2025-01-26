@@ -9,7 +9,7 @@ import numpy as np
 from src.data_loader import load_documents
 from src.vectorizer import create_faiss_index
 from src.search import search_faiss
-from config import FAISS_INDEX_PATH, FAISS_DIMENSION, TOP_K_RESULTS, EMBEDDING_MODEL
+from config import settings
 from typing import List
 from sentence_transformers import SentenceTransformer
 
@@ -23,6 +23,8 @@ app = FastAPI()
 class IndexCreateRequest(BaseModel):
     index: str
     algorithm: int = 1  # 기본값: Flat
+    dimension: int = settings.FAISS_DIMENSION  # 기본값: 768
+
 
 class DataInsertRequest(BaseModel):
     index: str
@@ -31,8 +33,11 @@ class DataInsertRequest(BaseModel):
 class QueryRequest(BaseModel):
     index: str
     query: str  # 검색할 텍스트 (쿼리)
+    size: int = settings.TOP_K_RESULTS  # 기본값: 5
+
 
 class VectorQueryRequest(BaseModel):
+    size: int = settings.TOP_K_RESULTS  # 기본값: 5
     index: str
     query_vector: List[float]  # 검색할 벡터 (리스트 형태)
 
@@ -123,7 +128,8 @@ def insert_data(request: DataInsertRequest):
         logger.info(f"데이터 삽입 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.input_vector)}")
 
         # 인덱스 파일 경로
-        index_path = os.path.join(FAISS_INDEX_PATH, f"{request.index}.index")
+        index_path = os.path.join(
+            settings.FAISS_INDEX_FOLDER_PATH, f"{request.index}.index")
 
         if not os.path.exists(index_path):
             raise HTTPException(status_code=404, detail="인덱스가 존재하지 않습니다.")
@@ -154,7 +160,8 @@ def search_by_query(request: QueryRequest):
         logger.info(f"검색어로 쿼리 조회 요청 - 인덱스: {request.index}, 검색어: {request.query}")
 
         # 인덱스 파일 경로
-        index_path = os.path.join(FAISS_INDEX_PATH, f"{request.index}.index")
+        index_path = os.path.join(
+            settings.FAISS_INDEX_FOLDER_PATH, f"{request.index}.index")
 
         if not os.path.exists(index_path):
             raise HTTPException(status_code=404, detail="인덱스가 존재하지 않습니다.")
@@ -205,7 +212,8 @@ def search_by_vector(request: VectorQueryRequest):
         logger.info(f"벡터로 쿼리 조회 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.query_vector)}")
 
         # 인덱스 파일 경로
-        index_path = os.path.join(FAISS_INDEX_PATH, f"{request.index}.index")
+        index_path = os.path.join(
+            settings.FAISS_INDEX_FOLDER_PATH, f"{request.index}.index")
 
         if not os.path.exists(index_path):
             raise HTTPException(status_code=404, detail="인덱스가 존재하지 않습니다.")

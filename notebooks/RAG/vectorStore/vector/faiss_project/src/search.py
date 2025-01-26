@@ -2,7 +2,7 @@ import faiss
 import os
 from fastapi import HTTPException
 from sentence_transformers import SentenceTransformer
-from config import EMBEDDING_MODEL, FAISS_INDEX_PATH, TOP_K_RESULTS
+from config import settings
 from src.data_loader import load_documents
 import logging
 
@@ -13,8 +13,13 @@ logger = logging.getLogger(__name__)
 def search_faiss(index_name: str, query: str):
     """저장된 FAISS 인덱스를 이용한 검색 및 문서 내용 출력"""
     try:
-        index_path = os.path.join(FAISS_INDEX_PATH, f"{index_name}.index")
+
+        index_path = os.path.join(
+            settings.FAISS_INDEX_FOLDER_PATH, f"{index_name}.index")
         logger.debug(f"인덱스 경로: {index_path}")
+
+        size = size if size else settings.TOP_K_RESULTS
+        logger.debug(f"검색 결과 개수: {size}")
 
         if not os.path.exists(index_path):
             raise HTTPException(status_code=404, detail="인덱스를 찾을 수 없습니다.")
