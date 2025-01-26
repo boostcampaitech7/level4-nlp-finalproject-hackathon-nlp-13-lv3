@@ -25,7 +25,7 @@ def search_faiss(index_name: str, query: str, size: int):
             raise HTTPException(status_code=404, detail="인덱스를 찾을 수 없습니다.")
 
         # 임베딩 모델 로드
-        model = SentenceTransformer(EMBEDDING_MODEL)
+        model = SentenceTransformer(settings.EMBEDDING_MODEL)
         logger.debug("임베딩 모델 로드 완료")
 
         # FAISS 인덱스 로드
