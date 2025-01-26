@@ -1,12 +1,26 @@
-# 오픈소스 임베딩 모델 지정
-EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# 데이터 경로
-PICKLE_FILE_PATH = "data/documents.pkl"
-FAISS_INDEX_PATH = "data/faiss_index"
 
-#임베딩 모델 따라 변경
-FAISS_DIMENSION = 384 
+class Settings(BaseSettings):
+    MODE: str = "development"
+    LOG_PATH: str = "./data/app.log"
+    FAISS_INDEX_FOLDER_PATH: str = "data/faiss_index"
+    FAISS_DIMENSION: int = 384
+    TOP_K_RESULTS: int = 5
+    EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    PICKLE_FILE_PATH: str = "data/documents.pkl"
 
-# 검색 결과 개수 설정
-TOP_K_RESULTS = 5
+    model_config = SettingsConfigDict(env_file='.env')
+
+    def model_post_init(self, __context):
+        if self.MODE == "development":
+            self.LOG_PATH = "data/app.log"
+            self.FAISS_INDEX_FOLDER_PATH = "data/faiss_index"
+            self.PICKLE_FILE_PATH = "data/documents.pkl"
+        else:
+            self.LOG_PATH = "/data/app.log"
+            self.FAISS_INDEX_FOLDER_PATH = "/data/faiss_index"
+            self.PICKLE_FILE_PATH = "/data/documents.pkl"
+
+
+settings = Settings()
