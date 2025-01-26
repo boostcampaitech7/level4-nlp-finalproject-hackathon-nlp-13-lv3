@@ -51,6 +51,7 @@ class VectorQueryRequest(BaseModel):
     size: int = settings.TOP_K_RESULTS  # 기본값: 5
     index: str
     query_vector: List[float]  # 검색할 벡터 (리스트 형태)
+    size: int = settings.TOP_K_RESULTS  # 기본값: 5
 
 
 # 임베딩 모델 로드
@@ -186,7 +187,8 @@ def search_by_query(request: QueryRequest, request_obj: Request):
     """
     logger = request_obj.state.logger
     try:
-        logger.info(f"검색어로 쿼리 조회 요청 - 인덱스: {request.index}, 검색어: {request.query}")
+        logger.info(
+            f"검색어로 쿼리 조회 요청 - 인덱스: {request.index}, 검색어: {request.query}, 요청 개수: {request.size}")
 
         # 인덱스 파일 경로
         index_path = os.path.join(
@@ -194,7 +196,7 @@ def search_by_query(request: QueryRequest, request_obj: Request):
 
         if not os.path.exists(index_path):
             raise HTTPException(status_code=404, detail="인덱스가 존재하지 않습니다.")
-
+        top_k_size = request.size if request.size else settings.TOP_K_RESULTS
         # FAISS 인덱스 로드
         index = faiss.read_index(index_path)
 
@@ -202,7 +204,7 @@ def search_by_query(request: QueryRequest, request_obj: Request):
         query_vector = model.encode([request.query], convert_to_numpy=True)
 
         # 검색
-        distances, indices = index.search(query_vector, TOP_K_RESULTS)
+        distances, indices = index.search(query_vector, top_k_size)
 
         # 문서 로드 (load_documents()가 문서 데이터를 반환한다고 가정)
         documents = load_documents()  # 문서 로드 함수는 이미 구현되어 있어야 합니다.
@@ -239,7 +241,8 @@ def search_by_vector(request: VectorQueryRequest, request_obj: Request):
     """
     logger = request_obj.state.logger
     try:
-        logger.info(f"벡터로 쿼리 조회 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.query_vector)}")
+        logger.info(
+            f"벡터로 쿼리 조회 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.query_vector)}, 요청 개수: {request.size}")
 
         # 인덱스 파일 경로
         index_path = os.path.join(
@@ -247,6 +250,7 @@ def search_by_vector(request: VectorQueryRequest, request_obj: Request):
 
         if not os.path.exists(index_path):
             raise HTTPException(status_code=404, detail="인덱스가 존재하지 않습니다.")
+        top_k_size = request.size if request.size else settings.TOP_K_RESULTS
 
         # FAISS 인덱스 로드
         index = faiss.read_index(index_path)
@@ -255,7 +259,7 @@ def search_by_vector(request: VectorQueryRequest, request_obj: Request):
         query_vector = np.array(request.query_vector, dtype=np.float32).reshape(1, -1)
 
         # 검색
-        distances, indices = index.search(query_vector, TOP_K_RESULTS)
+        distances, indices = index.search(query_vector, top_k_size)
 
         # 결과 반환
         results = [{"document_id": int(idx), "distance": float(dist)} for idx, dist in zip(indices[0], distances[0])]
