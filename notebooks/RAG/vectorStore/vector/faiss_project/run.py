@@ -74,6 +74,7 @@ def create_index(request: IndexCreateRequest, request_obj: Request):
     """
     FAISS 인덱스를 생성하는 API 엔드포인트.
     """
+    logger = request_obj.state.logger
     try:
         logger.info(f"FAISS 인덱스 생성 요청: {request.index}, 알고리즘: {request.algorithm}")
 
