@@ -4,7 +4,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from src.data_loader import load_documents
 import pickle
-from config import FAISS_INDEX_PATH, FAISS_DIMENSION, PICKLE_FILE_PATH
+from config import settings
 
 # 절대 경로 변환 (보완)
 FAISS_INDEX_FOLDER_PATH = os.path.abspath(settings.FAISS_INDEX_FOLDER_PATH)
