@@ -17,6 +17,7 @@ from config import settings
 from typing import List
 from sentence_transformers import SentenceTransformer
 
+
 # 로깅 설정
 logging.basicConfig(
     level=logging.DEBUG,
@@ -31,6 +32,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # 요청 데이터 모델 정의
+
+
 class IndexCreateRequest(BaseModel):
     index: str
     algorithm: int = 1  # 기본값: Flat
@@ -41,6 +44,7 @@ class DataInsertRequest(BaseModel):
     index: str
     input_vector: List[float]  # 벡터화된 데이터 (리스트 형태)
 
+
 class QueryRequest(BaseModel):
     index: str
     query: str  # 검색할 텍스트 (쿼리)
@@ -48,7 +52,6 @@ class QueryRequest(BaseModel):
 
 
 class VectorQueryRequest(BaseModel):
-    size: int = settings.TOP_K_RESULTS  # 기본값: 5
     index: str
     query_vector: List[float]  # 검색할 벡터 (리스트 형태)
     size: int = settings.TOP_K_RESULTS  # 기본값: 5
@@ -160,7 +163,8 @@ def insert_data(request: DataInsertRequest, request_obj: Request):
     """
     logger = request_obj.state.logger
     try:
-        logger.info(f"데이터 삽입 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.input_vector)}")
+        logger.info(
+            f"데이터 삽입 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.input_vector)}")
 
         # 인덱스 파일 경로
         index_path = os.path.join(
@@ -173,7 +177,8 @@ def insert_data(request: DataInsertRequest, request_obj: Request):
         index = faiss.read_index(index_path)
 
         # 데이터 삽입
-        input_vector = np.array(request.input_vector, dtype=np.float32).reshape(1, -1)  # 벡터 크기 조정
+        input_vector = np.array(request.input_vector,
+                                dtype=np.float32).reshape(1, -1)  # 벡터 크기 조정
         index.add(input_vector)  # 벡터 삽입
 
         # 인덱스 업데이트 후 저장
@@ -241,7 +246,6 @@ def search_by_query(request: QueryRequest, request_obj: Request):
         raise HTTPException(status_code=500, detail="쿼리 조회에 실패하였습니다.")
 
 
-
 @app.post("/api/context/search-by-vector")
 def search_by_vector(request: VectorQueryRequest, request_obj: Request):
     """
@@ -264,13 +268,15 @@ def search_by_vector(request: VectorQueryRequest, request_obj: Request):
         index = faiss.read_index(index_path)
 
         # 쿼리 벡터
-        query_vector = np.array(request.query_vector, dtype=np.float32).reshape(1, -1)
+        query_vector = np.array(request.query_vector,
+                                dtype=np.float32).reshape(1, -1)
 
         # 검색
         distances, indices = index.search(query_vector, top_k_size)
 
         # 결과 반환
-        results = [{"document_id": int(idx), "distance": float(dist)} for idx, dist in zip(indices[0], distances[0])]
+        results = [{"document_id": int(idx), "distance": float(
+            dist)} for idx, dist in zip(indices[0], distances[0])]
 
         return {"status": "ok", "results": results}
 
