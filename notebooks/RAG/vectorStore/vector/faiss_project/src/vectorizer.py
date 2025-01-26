@@ -7,7 +7,7 @@ import pickle
 from config import FAISS_INDEX_PATH, FAISS_DIMENSION, PICKLE_FILE_PATH
 
 # 절대 경로 변환 (보완)
-FAISS_INDEX_PATH = os.path.abspath(FAISS_INDEX_PATH)
+FAISS_INDEX_FOLDER_PATH = os.path.abspath(settings.FAISS_INDEX_FOLDER_PATH)
 
 # 모델 로딩 (384차원 모델)
 model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
@@ -36,9 +36,9 @@ def create_faiss_index(index_name: str, algorithm: int, dimension: int):
         os.remove(FAISS_INDEX_PATH)
 
     # 디렉토리 존재 여부 확인 후 생성
-    if not os.path.exists(FAISS_INDEX_PATH):
+    if not os.path.exists(FAISS_INDEX_FOLDER_PATH):
         try:
-            os.makedirs(FAISS_INDEX_PATH)
+            os.makedirs(FAISS_INDEX_FOLDER_PATH)
         except Exception as e:
             return False, f"디렉토리 생성 실패: {str(e)}"
 
