@@ -43,7 +43,18 @@ class VectorQueryRequest(BaseModel):
 
 
 # 임베딩 모델 로드
-model = SentenceTransformer(EMBEDDING_MODEL)
+model = SentenceTransformer(settings.EMBEDDING_MODEL)
+
+
+class LoggerMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        logger_name = f"API {request.method.upper()} {request.url.path}"
+        request.state.logger = logging.getLogger(logger_name)
+        response = await call_next(request)
+        return response
+
+
+app.add_middleware(LoggerMiddleware)
 
 
 @app.post("/api/index")
