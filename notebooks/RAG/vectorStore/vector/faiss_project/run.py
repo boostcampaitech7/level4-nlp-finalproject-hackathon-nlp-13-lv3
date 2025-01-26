@@ -58,7 +58,7 @@ app.add_middleware(LoggerMiddleware)
 
 
 @app.post("/api/index")
-def create_index(request: IndexCreateRequest):
+def create_index(request: IndexCreateRequest, request_obj: Request):
     """
     FAISS 인덱스를 생성하는 API 엔드포인트.
     """
@@ -89,11 +89,12 @@ def create_index(request: IndexCreateRequest):
 
 
 @app.get("/api/index")
-def check_index_exists(index: str):
+def check_index_exists(index: str, request_obj: Request):
     """
     FAISS 인덱스가 존재하는지 확인하는 API 엔드포인트.
     """
     try:
+        logger = request_obj.state.logger
         logger.info(f"인덱스 조회 요청: {index}")
 
         # 인덱스 파일 경로
@@ -111,10 +112,11 @@ def check_index_exists(index: str):
 
 
 @app.delete("/api/index")
-def delete_index(index: str):
+def delete_index(index: str, request_obj: Request):
     """
     FAISS 인덱스를 삭제하는 API 엔드포인트.
     """
+    logger = request_obj.state.logger
     try:
         logger.info(f"인덱스 삭제 요청: {index}")
 
@@ -134,10 +136,11 @@ def delete_index(index: str):
 
 
 @app.post("/api/context")
-def insert_data(request: DataInsertRequest):
+def insert_data(request: DataInsertRequest, request_obj: Request):
     """
     벡터화된 데이터를 FAISS 인덱스에 삽입하는 API 엔드포인트.
     """
+    logger = request_obj.state.logger
     try:
         logger.info(f"데이터 삽입 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.input_vector)}")
 
@@ -166,10 +169,11 @@ def insert_data(request: DataInsertRequest):
 
 
 @app.post("/api/context/search-by-query")
-def search_by_query(request: QueryRequest):
+def search_by_query(request: QueryRequest, request_obj: Request):
     """
     검색어를 벡터화하여 데이터를 검색하는 API 엔드포인트.
     """
+    logger = request_obj.state.logger
     try:
         logger.info(f"검색어로 쿼리 조회 요청 - 인덱스: {request.index}, 검색어: {request.query}")
 
@@ -218,10 +222,11 @@ def search_by_query(request: QueryRequest):
 
 
 @app.post("/api/context/search-by-vector")
-def search_by_vector(request: VectorQueryRequest):
+def search_by_vector(request: VectorQueryRequest, request_obj: Request):
     """
     벡터를 이용하여 데이터를 검색하는 API 엔드포인트.
     """
+    logger = request_obj.state.logger
     try:
         logger.info(f"벡터로 쿼리 조회 요청 - 인덱스: {request.index}, 벡터 크기: {len(request.query_vector)}")
 
