@@ -12,7 +12,8 @@ FAISS_INDEX_PATH = os.path.abspath(FAISS_INDEX_PATH)
 # 모델 로딩 (384차원 모델)
 model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
-def create_faiss_index(index_name: str, algorithm: int):
+
+def create_faiss_index(index_name: str, algorithm: int, dimension: int):
     """
     FAISS 인덱스를 생성하고, 주어진 텍스트에 대한 벡터를 인덱스에 추가하는 함수.
     """
@@ -41,27 +42,22 @@ def create_faiss_index(index_name: str, algorithm: int):
         except Exception as e:
             return False, f"디렉토리 생성 실패: {str(e)}"
 
-    index_file = os.path.join(FAISS_INDEX_PATH, f"{index_name}.index")
+    index_file = os.path.join(FAISS_INDEX_FOLDER_PATH, f"{index_name}.index")
 
-    # 기존 인덱스 삭제 로직 추가
-    if os.path.exists(index_file):
-        try:
-            os.remove(index_file)
-            print(f"기존 인덱스({index_name})가 삭제되었습니다.")
-        except Exception as e:
-            return False, f"기존 인덱스를 삭제하는 중 오류 발생: {str(e)}"
-
+    dimension = dimension if dimension else settings.FAISS_DIMENSION
     try:
         # 알고리즘 선택에 따른 인덱스 생성
         if algorithm == 1:
-            index = faiss.IndexFlatL2(FAISS_DIMENSION)  # 384 차원
+            index = faiss.IndexFlatL2(dimension)  # 384 차원
         elif algorithm == 2:
             nlist = 100
-            quantizer = faiss.IndexFlatL2(FAISS_DIMENSION)  # 384 차원
-            index = faiss.IndexIVFFlat(quantizer, FAISS_DIMENSION, nlist, faiss.METRIC_L2)
-            index.train(np.random.random((1000, FAISS_DIMENSION)).astype('float32'))
+            quantizer = faiss.IndexFlatL2(dimension)  # 384 차원
+            index = faiss.IndexIVFFlat(
+                quantizer, dimension, nlist, faiss.METRIC_L2)
+            index.train(np.random.random(
+                (1000, dimension)).astype('float32'))
         elif algorithm == 3:
-            index = faiss.IndexHNSWFlat(FAISS_DIMENSION, 32)  # 384 차원
+            index = faiss.IndexHNSWFlat(dimension, 32)  # 384 차원
         else:
             return False, "잘못된 알고리즘 번호입니다."  # 잘못된 알고리즘 번호 처리
 
