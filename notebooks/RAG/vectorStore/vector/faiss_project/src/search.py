@@ -7,10 +7,10 @@ from src.data_loader import load_documents
 import logging
 
 # 로깅 설정
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def search_faiss(index_name: str, query: str):
+
+def search_faiss(index_name: str, query: str, size: int):
     """저장된 FAISS 인덱스를 이용한 검색 및 문서 내용 출력"""
     try:
 
@@ -41,10 +41,11 @@ def search_faiss(index_name: str, query: str):
         logger.debug(f"쿼리 임베딩 생성 완료: {query_embedding.shape}")
 
         if query_embedding.shape[1] != index.d:
-            raise HTTPException(status_code=400, detail="쿼리 벡터 차원이 인덱스 차원과 일치하지 않습니다.")
+            raise HTTPException(
+                status_code=400, detail="쿼리 벡터 차원이 인덱스 차원과 일치하지 않습니다.")
 
         # 검색 수행
-        distances, indices = index.search(query_embedding, TOP_K_RESULTS)
+        distances, indices = index.search(query_embedding, size)
         logger.debug(f"검색 결과: {indices}")
 
         results = []
