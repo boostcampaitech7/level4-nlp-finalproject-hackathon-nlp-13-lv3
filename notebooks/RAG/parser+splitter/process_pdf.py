@@ -174,7 +174,7 @@ if __name__ == "__main__":
     # 경로 설정
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     PDF_DIR = os.path.join(BASE_DIR, "pdf_files")
-    OUTPUT_PICKLE = os.path.join(BASE_DIR, "documents.pkl")
+    OUTPUT_PICKLE = os.path.join(BASE_DIR, "updated_documents.pkl")
     
     # PDF 처리기 생성 및 실행
     try:
