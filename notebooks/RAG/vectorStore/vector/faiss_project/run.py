@@ -16,7 +16,6 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from src.data_loader import load_documents
 from src.vectorizer import create_faiss_index
-from src.search import search_faiss
 from config import settings
 from typing import List
 from sentence_transformers import SentenceTransformer
@@ -49,10 +48,7 @@ async def get_api_key(
             status_code=403, detail="Could not validate credentials"
         )
 
-security = HTTPBasic()
-
 app = FastAPI(dependencies=[Depends(get_api_key)])
-
 
 # 요청 데이터 모델 정의
 
