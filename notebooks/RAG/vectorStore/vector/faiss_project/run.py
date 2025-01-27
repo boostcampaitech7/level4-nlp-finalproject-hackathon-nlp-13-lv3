@@ -205,7 +205,7 @@ def insert_data(request: DataInsertRequest, request_obj: Request):
         raise HTTPException(status_code=500, detail="데이터 삽입에 실패하였습니다.")
 
 
-@app.post("/api/context/search-by-query")
+@app.post("/api/context/search-by-query", deprecated=True)
 def search_by_query(request: QueryRequest, request_obj: Request):
     """
     검색어를 벡터화하여 데이터를 검색하는 API 엔드포인트.
@@ -225,9 +225,9 @@ def search_by_query(request: QueryRequest, request_obj: Request):
         # FAISS 인덱스 로드
         index = faiss.read_index(index_path)
 
-        # 검색어를 벡터로 변환
-        query_vector = model.encode([request.query], convert_to_numpy=True)
-
+        # # 검색어를 벡터로 변환
+        # query_vector = model.encode([request.query], convert_to_numpy=True)
+        query_vector = None
         # 검색
         distances, indices = index.search(query_vector, top_k_size)
 
