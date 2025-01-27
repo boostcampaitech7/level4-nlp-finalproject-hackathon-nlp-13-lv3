@@ -74,10 +74,6 @@ class VectorQueryRequest(BaseModel):
     size: int = settings.TOP_K_RESULTS  # 기본값: 5
 
 
-# 임베딩 모델 로드
-model = SentenceTransformer(settings.EMBEDDING_MODEL)
-
-
 class LoggerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         logger_name = f"API {request.method.upper()} {request.url.path}"
