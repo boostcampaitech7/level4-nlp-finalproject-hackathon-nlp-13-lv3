@@ -45,7 +45,7 @@ project_root/
 ├── pdf_files/processed/ # JSON 파일 저장 디렉토리 (자동 생성)
 │   ├── CJ제일제당_20241120_신한증권.json
 │   └── ...
-└── documents.pkl        # 최종 생성되는 pickle 파일
+└── updated_documents.pkl        # 최종 생성되는 pickle 파일
 ```
 
 ## PDF 파일명 규칙
@@ -108,7 +108,7 @@ from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 
 # Pickle 파일 로드
-with open('documents.pkl', 'rb') as f:
+with open('updated_documents.pkl', 'rb') as f:
     documents: List[Document] = pickle.load(f)
 
 # 예시 : 전체 문서로 Chroma DB 생성
