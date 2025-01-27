@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Security, Depends
+from fastapi import FastAPI, HTTPException, Query, Security, Depends, Request
 from pydantic import BaseModel
 import logging
 import uvicorn
@@ -10,6 +10,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 import traceback
 from fastapi.security.api_key import APIKeyHeader
+from fastapi.openapi.models import APIKey, APIKeyIn
+from fastapi.openapi.utils import get_openapi
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from src.data_loader import load_documents
 from src.vectorizer import create_faiss_index
@@ -30,7 +33,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-API_KEY_NAME = "access_token"
+API_KEY_NAME = "x-api-key"
 API_KEY = settings.API_KEY  # 실제 API Key로 대체
 
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
@@ -46,7 +49,10 @@ async def get_api_key(
             status_code=403, detail="Could not validate credentials"
         )
 
+security = HTTPBasic()
+
 app = FastAPI(dependencies=[Depends(get_api_key)])
+
 
 # 요청 데이터 모델 정의
 
