@@ -1,4 +1,7 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+MODE = os.getenv("MODE", "development")
 
 
 class Settings(BaseSettings):
@@ -10,17 +13,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     PICKLE_FILE_PATH: str = "data/documents.pkl"
     API_KEY: str = ''
-    model_config = SettingsConfigDict(env_file='.env')
-
-    def model_post_init(self, __context):
-        if self.MODE == "development":
-            self.LOG_PATH = "data/app.log"
-            self.FAISS_INDEX_FOLDER_PATH = "data/faiss_index"
-            self.PICKLE_FILE_PATH = "data/documents.pkl"
-        else:
-            self.LOG_PATH = "/data/app.log"
-            self.FAISS_INDEX_FOLDER_PATH = "/data/faiss_index"
-            self.PICKLE_FILE_PATH = "/data/documents.pkl"
+    model_config = SettingsConfigDict(env_file='./env/.env')
 
 
 settings = Settings()
