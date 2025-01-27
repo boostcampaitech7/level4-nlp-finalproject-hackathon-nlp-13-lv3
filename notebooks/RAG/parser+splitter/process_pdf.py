@@ -40,7 +40,7 @@ class PDFProcessor:
                     "ocr": "auto",
                     "coordinates": True,
                     "output_formats": '["html", "text", "markdown"]',
-                    "model": "document-parse",
+                    "model": "document-parse-250116",
                     "base64_encoding": '["figure", "chart", "table"]'
                 }
                 
