@@ -18,8 +18,6 @@ from src.data_loader import load_documents
 from src.vectorizer import create_faiss_index
 from config import settings
 from typing import List
-from sentence_transformers import SentenceTransformer
-
 
 # 로깅 설정
 logging.basicConfig(
