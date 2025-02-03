@@ -116,7 +116,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
         )
         self._session = requests.Session()
         self._es = Elasticsearch(self.es_host)
-        self._model = SentenceTransformer('intfloat/multilingual-e5-large-instruct')
+        self._model = SentenceTransformer('dragonkue/BGE-m3-ko')
 
     def _get_relevant_documents(self, query: str) -> List[Document]:
         try:
@@ -126,7 +126,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
                 f"{self.faiss_url}/api/context/search-by-vector",
                 headers={"x-api-key": self.faiss_api_key},
                 json={
-                    "index": "prod-labq-documents-intfloat-multilingual-e5-large-instruct-hantaek",
+                    "index": "prod-labq-documents-dragonkue-BGE-m3-ko-faiss-hantaek",
                     "query_vector": query_vector,
                     "size": 100
                 },
@@ -162,7 +162,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
             }
             
             es_response = self._es.search(
-                index="prod-labq-documents-intfloat-multilingual-e5-large-instruct-hantaek", 
+                index="prod-labq-documents-dragonkue-bge-m3-ko-elastic-hantaek", 
                 body=es_query
             )
             
@@ -191,7 +191,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
 class RAGVisualizer:
     def __init__(self):
         self.embedding_model = CustomSentenceTransformerEmbeddings(
-            'intfloat/multilingual-e5-large-instruct'
+            'dragonkue/BGE-m3-ko'
         )
         
         # 하이브리드 리트리버 초기화
@@ -261,7 +261,7 @@ class RAGVisualizer:
             )
             
             # QA 체인 설정
-            llm = ChatOpenAI(temperature=0.1, model="gpt-4o-mini")
+            llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
             self.qa_chain = RetrievalQA.from_chain_type(
                 llm=llm,
                 chain_type="stuff",
@@ -323,7 +323,7 @@ def create_gradio_interface():
             with gr.Column(scale=2):
                 query_input = gr.Textbox(
                     label="질문을 입력하세요",
-                    placeholder="예: 크래프톤의 재무제표를 분석하고 전망을 참고해서 투자전략을 제안해주세요."
+                    placeholder="예: 24년도 크래프톤의 재무제표를 분석하고 25년도의 투자전략을 제안해주세요."
                 )
                 answer_output = gr.Textbox(
                     label="답변",
