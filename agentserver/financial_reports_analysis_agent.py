@@ -1,131 +1,74 @@
-from typing import Dict, List, Any
-from langchain.agents import Tool
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_core.prompts import PromptTemplate
-from langchain_core.tools import BaseTool
-from langchain_community.chat_models import ChatOpenAI
+import os
 import requests
+from dotenv import load_dotenv
 
-class FinancialReportsAnalysisTool(BaseTool):
-    name = "financial_analysis"
-    description = """
-    주식 투자와 기업 재무제표 분석에 유용한 도구입니다. 
-    기업의 재무상태, 실적, 전망, 투자의견 등을 분석할 수 있습니다.
-    입력은 자연어 질문 형태여야 합니다.
-    """
-    api_url: str
-    
-    def _call(self, query: str) -> Dict[str, Any]:
-        try:
-            response = requests.post(
-                self.api_url,
-                json={"query": query},
-                timeout=30
-            )
-            response.raise_for_status()
-            result = response.json()
-            return result
-        except requests.exceptions.RequestException as e:
-            return {"error": f"API request failed: {str(e)}"}
-
-    def _arun(self, query: str) -> Dict[str, Any]:
-        # 비동기 실행이 필요한 경우 구현
-        raise NotImplementedError("비동기 실행은 지원되지 않습니다.")
+# 최신 권장 방식으로 모듈 임포트
+from langchain_openai import ChatOpenAI 
+from langchain.schema import SystemMessage
+from langchain_core.prompts import PromptTemplate
 
 class FinancialReportsAnalysisAgent:
-    def __init__(
-        self, 
-        api_url: str = "http://localhost:8000/api/query",
-        model: str = "gpt-4o-mini",
-        temperature: float = 0.3
-    ):
-        # Tool 초기화
-        self.financial_tool = FinancialReportsAnalysisTool(
-            api_url=api_url
+    def __init__(self):
+        # 환경변수 로드 (.env 파일에 FINANCIAL_API_URL, OPENAI_API_KEY 등이 설정되어 있어야 함)
+        load_dotenv()
+
+        # ChatOpenAI 모델 초기화
+        self.llm = ChatOpenAI(
+            model_name="gpt-4o-mini", 
+            temperature=0.4
         )
-        
-        # Agent 프롬프트 템플릿
-        template = """
-        당신은 금융 분석 전문가입니다. 
-        주어진 도구를 사용하여 기업 분석과 투자 관련 질문에 답변해야 합니다.
 
-        다음 규칙을 반드시 따르세요:
-        1. 모든 수치 데이터는 원본 단위를 그대로 유지할 것
-        2. 분석은 객관적 사실에 기반할 것
-        3. 불확실한 내용은 명확히 표현할 것
-        4. 중요한 리스크 요인을 항상 포함할 것
-        5. 최종적으로 주식 투자 관점에서 인사이트를 포함시킬 것
+        self.system_prompt = SystemMessage(content=(
+            "당신은 주식 및 금융 보고서를 분석하는 AI 전문가입니다. 아래 규칙을 반드시 따르세요:\n"
+            "1. 반드시 'YYYY년도 MM월 DD일자 OO증권 레포트' 형식으로 날짜와 증권사 출처 정보를 포함할 것.\n"
+            "2. 목표 주가, 투자의견 및 관련 정보를 구체적으로 명시할 것.\n"
+            "3. 예시: '2024년도 11월 10일자 삼성증권 레포트에 따르면, 목표 주가는 34만 원으로 설정되었습니다.'\n"
+            "API에서 제공하는 답변을 바탕으로 사용자에게 유익한 주식투자 정보와 함께 반드시 위 형식의 출처 정보를 포함하여 명확하게 설명하세요. "
+            "투자 정보는 날짜 관계가 매우 중요합니다."
+        ))
 
-        {chat_history}
+        # 최종 답변 생성을 위한 프롬프트 템플릿 정의
+        self.final_prompt_template = PromptTemplate.from_template(
+            "당신은 주식 및 금융 보고서를 분석하는 AI 전문가입니다.\n"
+            "아래의 컨텍스트를 바탕으로 반드시 'YYYY년도 MM월 DD일자 OO증권 레포트' 형식의 날짜 및 증권사 출처 정보를 포함하여,\n"
+            "목표 주가, 투자의견 등 구체적인 정보를 명확하게 서술하는 최종 답변을 작성하세요.\n\n"
+            "컨텍스트:\n{context}\n\n"
+            "질문:\n{question}\n\n"
+            "최종 답변:"
+        )
 
-        Question: {input}
-        {agent_scratchpad}
+        # RunnableSequence
+        self.final_answer_chain = self.final_prompt_template | self.llm
+
+    def call_financial_api(self, query: str) -> str:
         """
-        
-        prompt = PromptTemplate(
-            template=template,
-            input_variables=["chat_history", "input", "agent_scratchpad"]
-        )
-        
-        # LLM 초기화
-        llm = ChatOpenAI(
-            model=model,
-            temperature=temperature
-        )
-        
-        # Tools 리스트 구성
-        tools = [self.financial_tool]
-        
-        # Agent 생성
-        self.agent = create_react_agent(
-            llm=llm,
-            tools=tools,
-            prompt=prompt
-        )
-        
-        # Agent Executor 생성
-        self.agent_executor = AgentExecutor(
-            agent=self.agent,
-            tools=tools,
-            verbose=True,
-            handle_parsing_errors=True
-        )
-
-    async def analyze(self, query: str) -> Dict[str, Any]:
+        주어진 query를 재무 분석 API에 전송하여 응답에서 answer를 반환합니다.
+        API URL은 환경변수 FINANCIAL_API_URL에서 가져오며, 기본값은 http://localhost:8000/api/query 입니다.
         """
-        주어진 쿼리에 대한 금융 분석을 수행합니다.
-        
-        Args:
-            query (str): 분석하고자 하는 질문
-            
-        Returns:
-            Dict[str, Any]: 분석 결과
-        """
+        api_url = os.getenv("FINANCIAL_API_URL", "http://localhost:8000/api/query")
         try:
-            result = await self.agent_executor.ainvoke(
-                {"input": query}
-            )
-            return result
+            response = requests.post(api_url, json={"query": query}, timeout=25)
+            response.raise_for_status()  # HTTP 오류 발생 시 예외 처리
+            result = response.json()      # 예상 응답 형식: {"context": [...], "answer": "분석 결과"}
+            return result.get("answer", "답변이 존재하지 않습니다.")
         except Exception as e:
-            return {
-                "error": f"Analysis failed: {str(e)}",
-                "output": None
-            }
+            return f"API 호출 중 오류 발생: {e}"
 
-# 사용 예시
-async def main():
-    # Agent 초기화
-    agent = FinancialReportsAnalysisAgent(
-        api_url="http://localhost:8000/api/query"
-    )
-    
-    # 테스트 쿼리
-    query = "SK하이닉스의 2024년 분기별 예상 세전 계속사업이익은?"
-    
-    # 분석 실행
-    result = await agent.analyze(query)
-    print("Analysis Result:", result)
+    def run(self, query: str) -> str:
+        """
+        Agent의 메인 실행 함수.
+        1. 재무 분석 API를 호출하여 원본 분석 결과(컨텍스트)를 가져옵니다.
+        2. 최종 답변 체인을 통해 원하는 형식의 답변을 생성하여 반환합니다.
+        """
+        # API 호출하여 원본 컨텍스트 얻기
+        api_context = self.call_financial_api(query)
+        # 최종 답변 생성 
+        final_answer = self.final_answer_chain.invoke({"context": api_context, "question": query})
+        return final_answer
 
+# 모듈 테스트 또는 standalone 실행 시 사용
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    agent = FinancialReportsAnalysisAgent()
+    test_query = "크래프톤에 주식 투자를 하고 싶은데 전문가 및 증권사들의 의견을 참고해서 유의할 점을 알려줘."
+    answer = agent.run(test_query)
+    print("최종 답변:", answer)
