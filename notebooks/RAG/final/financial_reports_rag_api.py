@@ -77,7 +77,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
                 f"{self.faiss_url}/api/context/search-by-vector",
                 headers={"x-api-key": self.faiss_api_key},
                 json={
-                    "index": "prod-labq-documents-dragonkue-BGE-m3-ko-faiss-hantaek",
+                    "index": "prod-labq-documents-dragonkue-doc-ver2--only-summary-faiss-hantaek",
                     "query_vector": query_vector,
                     "size": 100
                 },
@@ -107,7 +107,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
             }
             
             es_response = self._es.search(
-                index="prod-labq-documents-dragonkue-bge-m3-ko-elastic-hantaek", 
+                index="prod-labq-documents-dragonkue-doc-ver2--only-summary-elastic-hantaek", 
                 body=es_query
             )
             
