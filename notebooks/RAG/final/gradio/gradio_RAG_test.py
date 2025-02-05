@@ -126,7 +126,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
                 f"{self.faiss_url}/api/context/search-by-vector",
                 headers={"x-api-key": self.faiss_api_key},
                 json={
-                    "index": "prod-labq-documents-dragonkue-BGE-m3-ko-faiss-hantaek",
+                    "index": "prod-labq-documents-dragonkue-doc-ver2--only-summary-faiss-hantaek",
                     "query_vector": query_vector,
                     "size": 100
                 },
@@ -162,7 +162,7 @@ class HybridRetriever(BaseRetriever, BaseModel):
             }
             
             es_response = self._es.search(
-                index="prod-labq-documents-dragonkue-bge-m3-ko-elastic-hantaek", 
+                index="prod-labq-documents-dragonkue-doc-ver2--only-summary-elastic-hantaek", 
                 body=es_query
             )
             
@@ -210,9 +210,22 @@ class RAGVisualizer:
         주어진 문서의 내용을 기반으로 답변해주세요.
 
         중요: 수치 데이터 처리 규칙
-        - 모든 수치는 반드시 문서에 있는 그대로의 단위를 사용할 것 (예: 십억원은 십억원 그대로, 억원으로 변환하지 말 것)
-        - 수치 언급시 항상 단위를 함께 표기
-        - 단위 임의 변환 절대 금지
+        1. 단위 보존 원칙:
+        - 문서에 나온 모든 수치는 반드시 원본 단위 그대로 사용할 것
+        - 예시: 
+            * 2,373십억원 → 2,373십억원 (O)
+            * 2,373십억원 → 23,730억원 (X)
+            * 7,060십억원 → 7,060십억원 (O)
+            * 7,060십억원 → 70,600억원 (X)
+        
+        2. 단위 표기:
+        - 모든 수치는 반드시 단위를 포함하여 표기
+        - 단위 변환 절대 금지
+        - 십억원, 억원 등의 단위는 반드시 원문 그대로 사용
+        
+        3. 데이터 검증:
+        - 응답 전 모든 수치와 단위를 원본과 재확인
+        - 단위 변환이 발생했다면 즉시 원본 단위로 정정
 
         분석 가이드라인:
         1. 출처 정보
@@ -233,15 +246,16 @@ class RAGVisualizer:
         문맥: {context}
 
         Let's solve this step by step:
-        1) First, carefully identify all numbers and their exact units from the context
-        2) Double-check that we maintain the original units without any conversion
+        1) First, carefully identify all numbers and their EXACT units from the context
+        2) Double-check that we preserve the original units without ANY conversion
         3) Then, analyze other aspects of the information
         4) Finally, formulate the answer while ensuring unit accuracy
+        5) Before sending, verify one last time that all units match the original text exactly
         """
         return PromptTemplate(
             template=template, 
             input_variables=["context", "question"]
-            )
+        )
 
     def setup_qa_chain(self):
         try:
