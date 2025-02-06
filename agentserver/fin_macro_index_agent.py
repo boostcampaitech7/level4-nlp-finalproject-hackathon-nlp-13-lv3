@@ -134,8 +134,9 @@ class MacroeconomicAnalysisAgent(Node):
 
 # 모듈 테스트 (직접 실행 시)
 if __name__ == "__main__":
-    agent = MacroeconomicAnalysisAgent()
+    agent = MacroeconomicAnalysisAgent("MacroeconomicAnalysisAgent")
     test_query = "현재 거시경제 지표들이 한국 주식 시장에 미치는 영향을 분석하고, 투자 전략을 제시해주세요."
     answer = agent.run(test_query)
     print("\n=== 분석 결과 ===")
     print(answer)
+
