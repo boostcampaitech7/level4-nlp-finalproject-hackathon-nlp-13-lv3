@@ -8,7 +8,7 @@ from langchain.schema import SystemMessage
 from langchain_core.prompts import PromptTemplate
 import time
 
-from LangGraph_base import Node, GraphState  # 여기 수정됨
+from LangGraph_base import Node, GraphState 
 
 class FinancialReportsAnalysisAgent(Node):
     def __init__(self, name: str) -> None:
