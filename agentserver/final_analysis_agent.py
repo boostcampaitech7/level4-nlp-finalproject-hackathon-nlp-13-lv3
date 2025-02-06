@@ -12,6 +12,8 @@ from langchain_core.prompts import PromptTemplate
 
 from typing import Literal
 
+import time
+
 from LangGraph_base import Node, GraphState 
 
 class InvestmentEvaluation(BaseModel):
@@ -80,6 +82,7 @@ class FinalAnalysisAgent(Node):
                 state["final_opinion"] = final_output["recommendation"]
                 state["portfolio_suggestion"] = final_output["weight"]
 
+                time.sleep(0.5)
                 return state
             except Exception as e:
                 #print(f"Attempt {attempt+1} failed with error: {e}")

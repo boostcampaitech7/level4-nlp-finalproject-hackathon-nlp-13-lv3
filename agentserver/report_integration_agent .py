@@ -11,6 +11,8 @@ from langchain_core.prompts import PromptTemplate
 
 from typing import Literal
 
+import time
+
 from LangGraph_base import Node, GraphState 
 
 class ReportIntegrationNode(Node):
