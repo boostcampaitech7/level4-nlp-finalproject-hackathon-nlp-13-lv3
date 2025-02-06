@@ -73,8 +73,6 @@ class MicroeconomicAgent:
         분석 결과:
         """
 
-    # ... (나머지 코드는 동일)
-
 
     def get_daily_data(self, stock_code):
         """일봉 데이터 조회"""
