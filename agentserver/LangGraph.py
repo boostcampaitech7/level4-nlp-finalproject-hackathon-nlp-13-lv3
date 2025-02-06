@@ -4,7 +4,7 @@ from your_langgraph_base import Graph, GraphState
 from enterprise_agent import EnterpriseReportAgent
 from news_agent import NewsAnalysisAgent
 from fin_macro_index_agent import MacroeconomicAnalysisAgent  
-from financial_agent import FinancialStatementsAgent
+from fin_reports_analysis_agent import FinancialReportsAnalysisAgent
 from orderbook_agent import OrderBookAgent
 from report_integration_agent import ReportIntegrationNode
 from final_analysis_agent import FinalAnalysisAgent

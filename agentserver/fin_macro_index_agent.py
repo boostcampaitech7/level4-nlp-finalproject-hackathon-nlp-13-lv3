@@ -9,7 +9,7 @@ from langchain_core.prompts import PromptTemplate
 import time
 
 # LangGraph의 Node와 GraphState 타입을 사용한다고 가정합니다.
-from your_langgraph_base import Node, GraphState  # 각 모듈에서 이 기본 클래스를 import
+from LangGraph_base import Node, GraphState   # 각 모듈에서 이 기본 클래스를 import
 
 class MacroeconomicAnalysisAgent(Node):
     def __init__(self, name: str) -> None:
