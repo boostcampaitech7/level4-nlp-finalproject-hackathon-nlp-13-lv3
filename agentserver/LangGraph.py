@@ -5,7 +5,7 @@ from fin_Financial_Statements_agent import EnterpriseReportAgent ## 수정 예�
 from fin_news_analysis_agent import NewsAnalysisAgent
 from fin_macro_index_agent import MacroeconomicAnalysisAgent  
 from fin_reports_analysis_agent import FinancialReportsAnalysisAgent
-from fin_report_daily_chart_agent import OrderBookAgent ## 수정 예정
+from fin_report_daily_chart_agent import DailyChartAnalysisAgent
 from report_integration_agent import ReportIntegrationNode ## 수정 예정
 from final_analysis_agent import FinalAnalysisAgent ## 수정 예정
 
@@ -17,22 +17,23 @@ def main():
     news_node = NewsAnalysisAgent("NewsAnalysisAgent")
     macro_node = MacroeconomicAnalysisAgent("MacroeconomicAnalysisAgent")
     financial_node = FinancialReportsAnalysisAgent("FinancialReportsAnalysisAgent")
-    orderbook_node = OrderBookAgent("OrderBookAgent")
+    daily_chart_node = DailyChartAnalysisAgent("DailyChartAnalysisAgent")
     integration_node = ReportIntegrationNode("ReportIntegrationNode")
     final_node = FinalAnalysisAgent("FinalAnalysisAgent")
 
-    # 노드 추가
-    for node in [enterprise_node, news_node, macro_node, financial_node, orderbook_node, integration_node, final_node]:
+    # 노드 추가 
+    for node in [enterprise_node, news_node, macro_node, financial_node, daily_chart_node, integration_node, final_node]:
         graph.add_node(node)
 
-    # 엣지 연결
+    # 엣지 연결 (순차적 흐름 수정 예정)
     graph.add_edge("EnterpriseReportAgent", "NewsAnalysisAgent")
     graph.add_edge("NewsAnalysisAgent", "MacroeconomicAnalysisAgent")
     graph.add_edge("MacroeconomicAnalysisAgent", "FinancialReportsAnalysisAgent")
-    graph.add_edge("FinancialReportsAnalysisAgent", "OrderBookAgent")
-    graph.add_edge("OrderBookAgent", "ReportIntegrationNode")
+    graph.add_edge("FinancialReportsAnalysisAgent", "DailyChartAnalysisAgent")
+    graph.add_edge("DailyChartAnalysisAgent", "ReportIntegrationNode")
     graph.add_edge("ReportIntegrationNode", "FinalAnalysisAgent")
 
+    # 초기 상태 설정
     initial_state: GraphState = {
         "company_name": "LG화학",
         "user_assets": 10000000.0,
