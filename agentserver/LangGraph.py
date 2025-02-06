@@ -1,13 +1,13 @@
 # LangGraph.py
 
-from your_langgraph_base import Graph, GraphState
-from enterprise_agent import EnterpriseReportAgent
-from news_agent import NewsAnalysisAgent
+from LangGraph_base import Graph, GraphState
+from enterprise_agent import EnterpriseReportAgent ## 수정 예정
+from fin_news_analysis_agent import NewsAnalysisAgent ## 수정 예정
 from fin_macro_index_agent import MacroeconomicAnalysisAgent  
 from fin_reports_analysis_agent import FinancialReportsAnalysisAgent
-from orderbook_agent import OrderBookAgent
-from report_integration_agent import ReportIntegrationNode
-from final_analysis_agent import FinalAnalysisAgent
+from orderbook_agent import OrderBookAgent ## 수정 예정
+from report_integration_agent import ReportIntegrationNode ## 수정 예정
+from final_analysis_agent import FinalAnalysisAgent ## 수정 예정
 
 def main():
     # 그래프 생성
