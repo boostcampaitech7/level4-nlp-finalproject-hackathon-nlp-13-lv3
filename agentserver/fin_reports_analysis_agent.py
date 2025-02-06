@@ -65,7 +65,7 @@ class FinancialReportsAnalysisAgent:
         api_context = self.call_financial_api(query)
         # 최종 답변 생성 
         final_answer = self.final_answer_chain.invoke({"context": api_context, "question": query})
-        return final_answer
+        return final_answer.content
 
 # 모듈 테스트 또는 standalone 실행 시 사용
 if __name__ == "__main__":
