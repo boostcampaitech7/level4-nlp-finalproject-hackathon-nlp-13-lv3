@@ -8,26 +8,30 @@ import time
 class GraphState(TypedDict, total=False):
     company_name: Annotated[str, "분석 대상 기업명"]
     user_assets: Annotated[float, "사용자 보유 자산"]
-    
+
+    # (새로 추가) 투자 성향 페르소나
+    investment_persona: Annotated[str, "사용자의 투자 성향 (저위험/중위험/중고위험/고위험)"]
+
     # 각 에이전트별 보고서
     enterprise_report: Annotated[str, "기업 분석 보고서"]
     news_report: Annotated[str, "뉴스 및 감성 분석 보고서"]
     macro_report: Annotated[str, "거시경제 분석 보고서"]
     financial_report: Annotated[str, "재무제표 분석 보고서"]
     orderbook_report: Annotated[str, "호가창 분석 보고서"]
-    
+
     # 통합 보고서
     integrated_report: Annotated[str, "통합 보고서"]
-    
+
     # 최종 분석 결과
     final_opinion: Annotated[str, "최종 매매의견"]
     portfolio_suggestion: Annotated[str, "자산 배분 제안"]
-    
+
     # 최종 산출물
     final_report: Annotated[str, "최종 보고서"]
-    
+
     # 롤백 요청 (체크포인트)
     rollback: Annotated[str, "롤백 대상 노드 이름"]
+
 
 # Node: 각 에이전트(노드)의 기본 클래스
 class Node:
@@ -37,6 +41,7 @@ class Node:
     def process(self, state: GraphState) -> GraphState:
         print(f"[{self.name}] 기본 process() 호출")
         return state
+
 
 # Graph: 노드들을 연결하여 실행하는 간단한 DAG 구현
 class Graph:
@@ -71,7 +76,7 @@ class Graph:
         if len(topo_order) != len(self.nodes):
             raise ValueError("사이클이 존재하거나 위상 정렬 실패.")
         return topo_order
-
+## 스트리밍 처리 수정 예정
     def run_stream(self, initial_state: GraphState) -> Iterator[Tuple[str, GraphState]]:
         topo_order = self.get_topological_order()
         current_index = 0
