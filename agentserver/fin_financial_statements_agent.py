@@ -1,11 +1,7 @@
-# fin_financial_statements_agent.py
-
-import os
 import time
-import requests
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
+import yfinance as yf
 from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain_core.prompts import PromptTemplate
@@ -29,7 +25,7 @@ class FinancialStatementsAnalysisAgent(Node):
         # LLM 초기화 (모델명, 온도 등 필요 시 조정)
         self.llm = ChatOpenAI(
             model_name="gpt-4o-mini",
-            temperature=0.5
+            temperature=0.2
         )
 
         # 재무제표 분석 전문가 역할 시스템 프롬프트
@@ -60,38 +56,99 @@ class FinancialStatementsAnalysisAgent(Node):
         )
         self.final_answer_chain = self.final_prompt_template | self.llm
 
-    def fetch_financial_statements(self, company_name: str) -> dict:
+    def fetch_financial_ratios(company_name: str):
         """
-        재무제표 데이터 수집/스크래핑/가공 (예시로 간단히 고정 데이터 반환).
-        실제 구현에서는 requests + BeautifulSoup, 혹은 API 호출로 데이터 불러올 수 있음.
+        특정 한국 기업의 최근 4개년 재무 비율을 계산하여 가져오는 함수.
+        모든 비율을 % 단위로 변환하고, 소수점 둘째 자리에서 반올림.
         """
-        ## 갑작스러운 dart 점검으로 인해.. 
-        # 예시: 임의의 데이터 (연도별, 혹은 분기별로 구분)
-        # 실제로는 스크래핑/API로 수집한 뒤, JSON 형태로 가공
-        sample_fs = {
-            "건전성": {
-                "부채비율": "85%",
-                "이자보상배율": "10배"
-            },
-            "수익성": {
-                "ROE": "12%",
-                "ROA": "7%",
-                "영업이익률": "15%"
-            },
-            "성장성": {
-                "매출증가율": "10%",
-                "영업이익증가율": "12%"
-            },
-            "유동성": {
-                "유동비율": "130%",
-                "당좌비율": "85%"
-            },
-            "활동성": {
-                "재고자산회전율": "5회/년",
-                "총자산회전율": "1.2배/년"
-            }
+        company_code_list = {
+            "네이버": "035420",
+            "크래프톤": "259960",
+            "CJ제일제당": "097950",
+            "LG화학": "051910",
+            "SK케미칼": "285130",
+            "SK하이닉스": "000660",
+            "롯데렌탈": "089860",
+            "엘앤에프": "066970",
+            "카카오뱅크": "323410",
+            "한화솔루션": "009830"
         }
-        return sample_fs
+
+        if company_name not in company_code_list:
+            return f"⚠️ '{company_name}'의 종목 코드를 찾을 수 없습니다."
+
+        company_code = company_code_list[company_name]
+        ticker_symbol = f"{company_code}.KS"
+
+        try:
+            financial_statement = yf.Ticker(ticker_symbol)
+
+            # ✅ 최신 4개년 데이터 가져오기
+            balance_sheet = financial_statement.balance_sheet.iloc[:, :5] if not financial_statement.balance_sheet.empty else None
+            income_statement = financial_statement.financials.iloc[:, :5] if not financial_statement.financials.empty else None
+            cashflow_statement = financial_statement.cashflow.iloc[:, :5] if not financial_statement.cashflow.empty else None
+
+            # ✅ 재무 비율 계산을 위한 주요 데이터 필터링
+            selected_items = {
+                "Total Assets": "총자산",
+                "Invested Capital": "투자자본",
+                "Stockholders Equity": "자기자본",
+                "Net Income": "순이익",
+                "Total Revenue": "총매출액",
+                "Operating Income": "영업이익",
+                "Total Liabilities Net Minority Interest": "총부채",
+                "Long Term Debt": "장기부채",
+                "Current Assets": "유동자산",
+                "Current Liabilities": "유동부채",
+                "Cash And Cash Equivalents": "현금 및 현금성 자산",
+                "Accounts Receivable": "매출채권",
+            }
+
+            # ✅ 데이터 존재 여부 확인 후 필터링 (연도별 저장)
+            filtered_data = {year: {} for year in balance_sheet.columns} if balance_sheet is not None else {}
+
+            for key, label in selected_items.items():
+                for year in filtered_data.keys():
+                    if balance_sheet is not None and key in balance_sheet.index:
+                        filtered_data[year][label] = balance_sheet.loc[key, year]
+                    elif income_statement is not None and key in income_statement.index:
+                        filtered_data[year][label] = income_statement.loc[key, year]
+                    elif cashflow_statement is not None and key in cashflow_statement.index:
+                        filtered_data[year][label] = cashflow_statement.loc[key, year]
+                    else:
+                        filtered_data[year][label] = "데이터 없음"
+
+            # ✅ 비율 계산 함수 (소수점 둘째 자리 반올림 + % 변환)
+            def calc_ratio(numerator, denominator):
+                if numerator != "데이터 없음" and denominator != "데이터 없음" and denominator != 0:
+                    return f"{round((numerator / denominator) * 100, 2)}%"
+                return "N/A"
+
+            # ✅ 연도별 ROI 및 주요 재무 비율 계산
+            ratios_by_year = {}
+
+            for year, data in filtered_data.items():
+                ratios_by_year[year] = {
+                    "총자산": data["총자산"],
+                    "총매출액": data["총매출액"],
+                    "영업이익": data["영업이익"],
+                    "ROI (투자수익률)": calc_ratio(data["순이익"], data["투자자본"]),
+                    "부채비율": calc_ratio(data["총부채"], data["총자산"]),
+                    "금융부채비율": calc_ratio(data["장기부채"], data["총자산"]),
+                    "이자보상배율": calc_ratio(data["영업이익"], data["총부채"]),
+                    "유동비율": calc_ratio(data["유동자산"], data["유동부채"]),
+                    "총자산영업이익률": calc_ratio(data["영업이익"], data["총자산"]),
+                    "총자산순이익률": calc_ratio(data["순이익"], data["총자산"]),
+                    "자기자본순이익률(ROE)": calc_ratio(data["순이익"], data["자기자본"]),
+                    "현금자산비율": calc_ratio(data["현금 및 현금성 자산"], data["총자산"]),
+                    "자산회전율": calc_ratio(data["총매출액"], data["총자산"]),
+                    "매출채권회전율": calc_ratio(data["총매출액"], data["매출채권"]),
+                }
+
+            return ratios_by_year
+
+        except Exception as e:
+            return f"데이터 조회 중 오류 발생: {e}"
 
     def format_financial_statements(self, fs_data: dict) -> str:
         """
@@ -147,3 +204,8 @@ if __name__ == "__main__":
 
     print("\n=== 재무제표 분석 결과 ===")
     print(final_state.get("financial_statements_report", "분석 결과 없음"))
+
+
+
+
+
