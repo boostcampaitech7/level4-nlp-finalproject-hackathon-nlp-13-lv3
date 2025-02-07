@@ -76,11 +76,9 @@ FastAPI 기반 한국 주식 실시간 호가창 데이터 제공 API 서비스
 2. **API 키 발급**  
    - 개발자센터 접속: [KIS Developers Console](https://apiportal.koreainvestment.com/)
    - 모의투자 API 선택 → App Key & Secret 발급  
-   <img src="https://example.com/api-key-screenshot.png" width="400">
 
 3. **계좌번호 확인**  
    모의투자 화면 → [계좌관리] 메뉴에서 `123456-78` 형식 확인  
-   <img src="https://example.com/account-screenshot.png" width="400">
 
 4. **.env 파일 작성**  
    프로젝트 루트에 `.env` 파일 생성 후 아래 포맷 적용:
