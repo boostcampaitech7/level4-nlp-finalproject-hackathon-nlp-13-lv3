@@ -1,7 +1,7 @@
 # LangGraph.py
 
 from LangGraph_base import Graph, GraphState
-from fin_Financial_Statements_agent import FinancialStatementsAnalysisAgent
+from fin_financial_statements_agent import FinancialStatementsAnalysisAgent
 from fin_news_analysis_agent import NewsAnalysisAgent
 from fin_macro_index_agent import MacroeconomicAnalysisAgent
 from fin_reports_analysis_agent import FinancialReportsAnalysisAgent
