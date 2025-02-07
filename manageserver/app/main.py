@@ -4,7 +4,7 @@ FastAPI 서버 진입점
 """
 
 from fastapi import FastAPI
-from .api.routes import router
+from app.api.routes import router
 
 app = FastAPI()
 app.include_router(router)
