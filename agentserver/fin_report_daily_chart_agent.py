@@ -1,35 +1,34 @@
-import mojito
-import pandas as pd
-import openai
-import asyncio
-from dotenv import load_dotenv
 import os
+import time
+import asyncio
+from typing import Optional, Dict, Any
+import pandas as pd
+from dotenv import load_dotenv
+# `mojito2` 설치 필요
+import mojito
 
-load_dotenv()  # .env 파일에서 환경 변수 로드
+# 최신 권장 방식으로 모듈 임포트
+from langchain_openai import ChatOpenAI
+from langchain.schema import SystemMessage
+from langchain_core.prompts import PromptTemplate
 
-class MicroeconomicAgent:
+
+# 환경변수 로드 
+# (.env 파일에 OPENAI_API_KEY, 
+# KOREAINVESTMENT_KEY, KOREAINVESTMENT_SECRET, KOREAINVESTMENT_ACC_NO를 설정해주세요.
+# )
+load_dotenv()
+
+class DailyChartAnalysisAgent:
     def __init__(self):
-        # 기존 코드 유지
-
         # API 인증 정보 읽기
-        koreainvestment_key = os.getenv('KOREAINVESTMENT_KEY')
-        koreainvestment_secret = os.getenv('KOREAINVESTMENT_SECRET')
-        koreainvestment_acc_no = os.getenv('KOREAINVESTMENT_ACC_NO')
-
-        if not koreainvestment_key or not koreainvestment_secret or not koreainvestment_acc_no:
-            print("API 인증 정보가 없습니다. .env 파일을 확인하세요.")
-            return
-
-        # broker 객체 생성
-        self.broker = mojito.KoreaInvestment(
-            api_key=koreainvestment_key,
-            api_secret=koreainvestment_secret,
-            acc_no=koreainvestment_acc_no
-        )
+        self.broker = self._initialize_broker()
         
-        # OpenAI API 키 설정
-        openai_api_key = os.getenv('OPENAI_API_KEY')
-        openai.api_key = openai_api_key
+        # LangChain ChatOpenAI 초기화
+        self.chat_model = ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.4,
+        )
         
         # 관심 종목 리스트
         self.target_stocks = {
@@ -45,92 +44,113 @@ class MicroeconomicAgent:
             "한화솔루션": "009830"
         }
 
-        # 시스템 프롬프트 설정
-        self.system_prompt = "당신은 미시경제 분석 전문가입니다. 주식 가격의 추세와 패턴을 분석하여 미래의 가격 변동을 예측해야 합니다.\n" \
-                            "1. 시장 가격은 모든 정보를 반영한다는 전제 하에 분석합니다.\n" \
-                            "2. 가격의 움직임은 추세와 패턴을 따릅니다.\n" \
-                            "3. 제공된 일봉 데이터와 월봉 데이터를 활용하여 추세와 패턴을 분석합니다.\n" \
-                            "4. 다우 이론, 갠 이론, 이동평균선, 추세 분석, 엘리어트 이론 등을 참고하여 분석합니다.\n" \
-                            "5. 앞으로의 수요와 공급 변화를 예측하고, 이를 통해 미래 가격을 예측하세요.\n" \
-                            "6. 분석 결과는 'YYYY년도 MM월 DD일자 일봉/월봉 분석' 형식으로 날짜와 출처 정보를 포함하세요."
+        # System Message 정의
+        self.system_message = SystemMessage(content=(
+            "당신은 주식 가격의 일봉 및 월봉 차트를 분석하여 미래의 가격 변동을 예측하는 기술적 분석 전문가입니다.\n"
+            "1. 시장 가격은 모든 정보를 반영한다는 가정 하에서, 수급과 차트 패턴 위주로 분석하세요.\n"
+            "2. 이동평균선, 추세선, 캔들 패턴, 거래량 변화, 오실레이터 등을 활용하여 추세와 패턴을 진단하세요.\n"
+            "3. 제공된 일봉 데이터와 월봉 데이터를 바탕으로 단기/중기 관점의 미래 가격 움직임을 예측하세요.\n"
+            "4. 다우 이론, 엘리엇 파동, 캔들 패턴 등 심화 분석을 이용하여 인사이트를 제공해주세요.\n"
+            "5. 매매의견(매수, 매도, 관망)과 구체적인 투자전략(예: 분할매수, 손절라인 설정 등)을 제시하세요."
+        ))
 
-        # 최종 답변 프롬프트 템플릿 정의
-        self.final_prompt_template = """
-        아래의 주식 데이터를 분석하여 기술적 분석 리포트를 작성해주세요.
+        # PromptTemplate 정의
+        self.analysis_prompt = PromptTemplate(
+            template="""
+            아래의 주식 데이터를 분석하여 기술적 분석 리포트를 작성해주세요.
+            []
 
-        컨텍스트:
-        {context}
+            컨텍스트:
+            {context}
 
-        질문:
-        {question}
+            질문:
+            {question}
 
-        다음 단계로 분석을 진행해주세요:
-        1. 추세 분석
-        2. 패턴 분석
-        3. 단기 및 중기 전망
-        4. 투자자들을 위한 제안
+            아래 단계를 고려해 분석을 진행하세요:
+            1. 추세 분석 (일봉/월봉 추세, 이동평균선, 거래량 등)
+            2. 패턴 분석 (캔들 패턴, 지지/저항 등)
+            3. 단기 및 중기 전망
+            4. 투자자들을 위한 제안 (매매의견, 손절/익절 전략 등)
 
-        분석 결과:
-        """
+            분석 결과:
+            """,
+            input_variables=["context", "question"]
+        )
 
+        # RunnableSequence 정의
+        self.analysis_chain = self.analysis_prompt | self.chat_model
 
-    def get_daily_data(self, stock_code):
+    def _initialize_broker(self) -> Optional[mojito.KoreaInvestment]:
+        """broker 객체 초기화"""
+        key = os.getenv('KOREAINVESTMENT_KEY')
+        secret = os.getenv('KOREAINVESTMENT_SECRET')
+        acc_no = os.getenv('KOREAINVESTMENT_ACC_NO')
+
+        if not all([key, secret, acc_no]):
+            print("API 인증 정보가 없습니다. .env 파일을 확인하세요.")
+            return None
+
+        return mojito.KoreaInvestment(
+            api_key=key,
+            api_secret=secret,
+            acc_no=acc_no
+        )
+
+    def get_daily_data(self, stock_code: str) -> Optional[list]:
         """일봉 데이터 조회"""
+        if not self.broker:
+            print("Broker 객체가 없습니다.")
+            return None
         try:
             daily_data = self.broker.fetch_ohlcv(
                 symbol=stock_code,
                 timeframe='D',
                 adj_price=True
             )
-            if daily_data and 'output2' in daily_data:
-                return daily_data['output2'][:-3]  
-            return None
+            return daily_data.get('output2', [])[:-3] if daily_data else None
         except Exception as e:
             print(f"일봉 데이터 조회 실패: {e}")
             return None
 
-    def get_monthly_data(self, stock_code):
+    def get_monthly_data(self, stock_code: str) -> Optional[list]:
         """월봉 데이터 조회"""
+        if not self.broker:
+            print("Broker 객체가 없습니다.")
+            return None
         try:
             monthly_data = self.broker.fetch_ohlcv(
                 symbol=stock_code,
                 timeframe='M',
                 adj_price=True
             )
-            if monthly_data and 'output2' in monthly_data:
-                return monthly_data['output2'][:-3]  
-            return None
+            return monthly_data.get('output2', [])[:-3] if monthly_data else None
         except Exception as e:
             print(f"월봉 데이터 조회 실패: {e}")
             return None
 
-    def save_to_csv(self, data, filename):
-        """데이터를 CSV 파일로 저장"""
-        if data:
-            df = pd.DataFrame(data)
-            # 필요한 컬럼만 선택
-            columns = ['stck_bsop_date', 'stck_oprc', 'stck_hgpr', 'stck_lwpr', 'stck_clpr', 'acml_vol']
-            df = df[columns]
-            # 컬럼명 변경
-            column_names = {
-                'stck_bsop_date': 'date',
-                'stck_oprc': 'open',
-                'stck_hgpr': 'high',
-                'stck_lwpr': 'low',
-                'stck_clpr': 'close',
-                'acml_vol': 'volume'
-            }
-            df = df.rename(columns=column_names)
-            # 날짜 형식 변환
-            df['date'] = pd.to_datetime(df['date'])
-            # CSV 파일로 저장
-            # df.to_csv(filename, index=False)
-            # print(f"{filename} 저장 완료")
-            return df
+    def save_to_csv(self, data: list, filename: str) -> Optional[pd.DataFrame]:
+        """데이터를 DataFrame으로 변환"""
+        if not data:
+            return None
 
-    def create_context(self, daily_df, monthly_df, company_name):
-        """GPT 모델을 위한 컨텍스트 생성"""
-        context = f"""
+        df = pd.DataFrame(data)
+        columns = ['stck_bsop_date', 'stck_oprc', 'stck_hgpr', 'stck_lwpr', 'stck_clpr', 'acml_vol']
+        column_names = {
+            'stck_bsop_date': 'date',
+            'stck_oprc': 'open',
+            'stck_hgpr': 'high',
+            'stck_lwpr': 'low',
+            'stck_clpr': 'close',
+            'acml_vol': 'volume'
+        }
+        
+        df = df[columns].rename(columns=column_names)
+        df['date'] = pd.to_datetime(df['date'])
+        return df
+
+    def create_context(self, daily_df: pd.DataFrame, monthly_df: pd.DataFrame, company_name: str) -> str:
+        """분석 컨텍스트 생성"""
+        return f"""
         회사명: {company_name}
 
         [일봉 데이터 요약]
@@ -144,66 +164,44 @@ class MicroeconomicAgent:
         최근 월 종가: {monthly_df['close'].iloc[-1]}
         최근 3개월 종가 추이: {', '.join(map(str, monthly_df['close'].tail(3).tolist()))}
         """
-        return context
 
-    async def get_gpt_analysis(self, context, question):
-        """GPT-4o-mini 모델을 사용하여 분석 수행"""
-        prompt = self.final_prompt_template.format(context=context, question=question)
+    async def analyze_stock(self, company_name: str, question: str) -> str:
+        """특정 종목 분석 실행 및 결과 반환"""
+        if company_name not in self.target_stocks:
+            return f"종목 {company_name}은(는) 관심 종목 리스트에 없습니다."
 
-        try:
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.4,  # 분석의 다양성을 높이기 위한 설정
-                max_tokens=1000,  # 응답 길이 제한
-                top_p=0.8,  # 더 집중된 응답을 위한 설정
-                presence_penalty=0.1,  # 반복을 줄이기 위한 설정
-                frequency_penalty=0.1  # 반복을 줄이기 위한 설정
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"GPT 분석 중 오류 발생: {str(e)}"
+        code = self.target_stocks[company_name]
+        print(f"\n=== {company_name}({code}) 분석 시작 ===")
 
-    async def analyze_stock(self, company_name, question):
-        """종목 분석"""
-        if company_name in self.target_stocks:
-            code = self.target_stocks[company_name]
-            daily_data = self.get_daily_data(code)
-            monthly_data = self.get_monthly_data(code)
+        # 데이터 수집 및 처리
+        daily_data = self.get_daily_data(code)
+        monthly_data = self.get_monthly_data(code)
 
-            print(f"\n=== {company_name}({code}) 분석 결과 ===")
-            
-            # CSV 파일로 저장 및 DataFrame 반환
-            daily_df = self.save_to_csv(daily_data, f"{company_name}_daily.csv")
-            monthly_df = self.save_to_csv(monthly_data, f"{company_name}_monthly.csv")
+        if not daily_data or not monthly_data:
+            return "데이터 조회 실패"
 
-            # GPT 분석을 위한 컨텍스트 생성
-            context = self.create_context(daily_df, monthly_df, company_name)
+        daily_df = self.save_to_csv(daily_data, f"{company_name}_daily.csv")
+        monthly_df = self.save_to_csv(monthly_data, f"{company_name}_monthly.csv")
 
-            # GPT 분석 실행
-            analysis = await self.get_gpt_analysis(context, question)
+        if daily_df is None or monthly_df is None:
+            return "데이터 처리 실패"
 
-            # 중복된 부분 제거
-            lines = analysis.split('\n')
-            unique_lines = []
-            for line in lines:
-                if line not in unique_lines:
-                    unique_lines.append(line)
-            analysis = '\n'.join(unique_lines)
+        # 분석 실행
+        context = self.create_context(daily_df, monthly_df, company_name)
+        response = await self.analysis_chain.ainvoke({
+            "context": context,
+            "question": question
+        })
+        
+        return response.content
 
-            print("\nGPT 분석 결과:")
-            print(analysis)
-
-        else:
-            print(f"종목 {company_name}은(는) 관심 종목 리스트에 없습니다.")
+    def run(self, company_name: str, question: str = "차트 데이터 기반 기술적 분석을 요청합니다.") -> str:
+        """메인 실행 함수"""
+        return asyncio.run(self.analyze_stock(company_name, question))
 
 if __name__ == "__main__":
-    agent = MicroeconomicAgent()
-    question = "현재 미시경제 지표들이 한국 주식 시장에 미치는 영향을 분석하고, 이를 바탕으로 한 투자 전략을 제시해주세요."
-    company = "네이버"
-
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) 
-    asyncio.run(agent.analyze_stock(company, question))
+    # 테스트 실행
+    agent = DailyChartAnalysisAgent()
+    answer = agent.run("크래프톤", "현재 차트 추세와 향후 전망을 알려주세요.")
+    print("\n분석 결과:")
+    print(answer)
