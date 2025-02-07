@@ -81,10 +81,11 @@ class NewsAnalysisAgent(Node):
         self.final_prompt_template = PromptTemplate.from_template(
             "아래의 뉴스 데이터를 기반으로, 해당 기업의 주식에 미치는 영향과\n"
             "투자 전략을 평가하세요.\n\n"
-            "뉴스 데이터 (타이틀, 발행일, URL):\n{news_data}\n\n"
+            "참고한 뉴스 데이터 (타이틀, 발행일, URL):\n{news_data}\n\n"
             "발행일을 참고하여 참고한 뉴스 발행일 기간을 명시하세요."
             "분석 요청:\n{query}\n\n"
             "분석 결과를 다음 형식으로 작성하세요:\n"
+            "뉴스 데이터:\n"
             "매매의견:\n"
             "투자 근거:"
         )
