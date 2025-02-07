@@ -1,12 +1,16 @@
-from fastapi import FastAPI, HTTPException
+import uvicorn
 import mojito
 import os
 import pandas as pd
 import requests
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+
 
 app = FastAPI()
 
 # 환경변수에서 인증 정보 로드
+load_dotenv()
 broker = mojito.KoreaInvestment(
     api_key=os.getenv('KOREAINVESTMENT_KEY'),
     api_secret=os.getenv('KOREAINVESTMENT_SECRET'),
@@ -71,3 +75,6 @@ async def get_realtime_hoga(identifier: str):
         "total_ask": raw_data.get('total_askp_rsqn'),
         "total_bid": raw_data.get('total_bidp_rsqn')
     }
+
+if __name__ == "__main__":
+    uvicorn.run("utils:app", port=7840, reload=True)
