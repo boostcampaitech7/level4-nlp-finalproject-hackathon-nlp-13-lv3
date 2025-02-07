@@ -75,7 +75,7 @@ class FinancialStatementsAnalysisAgent(Node):
         }
 
         if company_name not in company_code_list:
-            return f"⚠️ '{company_name}'의 종목 코드를 찾을 수 없습니다."
+            return f"'{company_name}'의 종목 코드를 찾을 수 없습니다."
 
         company_code = company_code_list[company_name]
         ticker_symbol = f"{company_code}.KS"
@@ -83,12 +83,12 @@ class FinancialStatementsAnalysisAgent(Node):
         try:
             financial_statement = yf.Ticker(ticker_symbol)
 
-            # ✅ 최신 4개년 데이터 가져오기
+            # 최신 4개년 데이터 가져오기
             balance_sheet = financial_statement.balance_sheet.iloc[:, :5] if not financial_statement.balance_sheet.empty else None
             income_statement = financial_statement.financials.iloc[:, :5] if not financial_statement.financials.empty else None
             cashflow_statement = financial_statement.cashflow.iloc[:, :5] if not financial_statement.cashflow.empty else None
 
-            # ✅ 재무 비율 계산을 위한 주요 데이터 필터링
+            # 재무 비율 계산을 위한 주요 데이터 필터링
             selected_items = {
                 "Total Assets": "총자산",
                 "Invested Capital": "투자자본",
@@ -104,7 +104,7 @@ class FinancialStatementsAnalysisAgent(Node):
                 "Accounts Receivable": "매출채권",
             }
 
-            # ✅ 데이터 존재 여부 확인 후 필터링 (연도별 저장)
+            # 데이터 존재 여부 확인 후 필터링 (연도별 저장)
             filtered_data = {year: {} for year in balance_sheet.columns} if balance_sheet is not None else {}
 
             for key, label in selected_items.items():
@@ -118,13 +118,13 @@ class FinancialStatementsAnalysisAgent(Node):
                     else:
                         filtered_data[year][label] = "데이터 없음"
 
-            # ✅ 비율 계산 함수 (소수점 둘째 자리 반올림 + % 변환)
+            # 비율 계산 함수 (소수점 둘째 자리 반올림 + % 변환)
             def calc_ratio(numerator, denominator):
                 if numerator != "데이터 없음" and denominator != "데이터 없음" and denominator != 0:
                     return f"{round((numerator / denominator) * 100, 2)}%"
                 return "N/A"
 
-            # ✅ 연도별 ROI 및 주요 재무 비율 계산
+            # 연도별 ROI 및 주요 재무 비율 계산
             ratios_by_year = {}
 
             for year, data in filtered_data.items():
