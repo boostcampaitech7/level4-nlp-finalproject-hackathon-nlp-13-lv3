@@ -331,6 +331,31 @@ def investor_analysis_page():
         # 필요 시 세션 상태에 저장
         st.session_state.investor_total_score = total_score
         st.session_state.investor_type = investor_type
+        # "보고서 생성" 버튼을 추가하여, 사용자가 버튼을 누르면 보고서를 생성하고 보고서 열람 페이지로 이동
+        st.session_state.form_submitted = True
+
+    if st.session_state.get("form_submitted", True):
+        if st.button("보고서 생성"):
+            investor_type = st.session_state.investor_type
+
+            selected_company = st.session_state.selected_company if 'selected_company' in st.session_state else companies[
+                0]
+            report = generate_report(selected_company, investor_type)
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            new_report = pd.DataFrame({
+                'Date': [now],
+                'Company': [selected_company],
+                'Investor Type': [investor_type],
+                'Report': [report]
+            })
+            # 기존 보고서 DataFrame에 추가
+            st.session_state.reports = pd.concat(
+                [st.session_state.reports, new_report], ignore_index=True)
+            st.session_state.report_generated = report  # 방금 생성한 보고서를 세션에 저장
+            st.session_state.page = "report_view"         # 다음 페이지로 전환
+            st.session_state.form_submitted = False
+            st.rerun()
+
 
 # 5. 보고서 열람 페이지 (방금 생성한 보고서 보여주기)
 
