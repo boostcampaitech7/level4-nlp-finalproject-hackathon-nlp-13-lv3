@@ -64,46 +64,46 @@ class DailyChartAnalysisAgent(Node):
         # PromptTemplate
         self.analysis_prompt = PromptTemplate(
             template="""\
-아래의 주식 데이터를 분석하여 기술적 분석 리포트를 작성해주세요.
+                아래의 주식 데이터를 분석하여 기술적 분석 리포트를 작성해주세요.
 
-컨텍스트:
-{context}
+                컨텍스트:
+                {context}
 
-질문:
-{question}
+                질문:
+                {question}
 
-        다음 단계로 분석 후 리포트 형태로 뽑아주세요:
-        1.  월봉,일봉  주요 지지선과 저항선
-            일봉
-            지지선 :
-            저항선 :
-            근거 : 
-            월봉
-            지지선 :
-            저항선 :
-            근거 
-        2.  전체 거래량 분석
-            금일 거래량과 이전 거래량 비교 :      
-        3.  현재 가격, 추천 구매 가격, 추천 손절 가격, 추천 익절 가격 제시 및 근거 설명
-            금일 현재가 :
-            추천 구매 가격 :
-            추천 익절 가격 :
-            추천 손절 가격 :
-            근거 : 
-        4.  주요 기술적 지표 설명를 통한 분석 (이동평균선 ,RSI, MACD 외 다우 이론, 갠 이론, 이동평균선, 추세 분석, 엘리어트 이론 등을 참고하여 분석) - 기술적 분석에 대해 이해도가 필요해 보여요
-   
-        5.  단기, 중기, 장기 전망
-            단기 : 
-            중기 :
-            장기 : 
-        6.  상대적 강도 평가
+                        다음 단계로 분석 후 리포트 형태로 뽑아주세요:
+                        1.  월봉,일봉  주요 지지선과 저항선
+                            일봉
+                            지지선 :
+                            저항선 :
+                            근거 : 
+                            월봉
+                            지지선 :
+                            저항선 :
+                            근거 
+                        2.  전체 거래량 분석
+                            금일 거래량과 이전 거래량 비교 :      
+                        3.  현재 가격, 추천 구매 가격, 추천 손절 가격, 추천 익절 가격 제시 및 근거 설명
+                            금일 현재가 :
+                            추천 구매 가격 :
+                            추천 익절 가격 :
+                            추천 손절 가격 :
+                            근거 : 
+                        4.  주요 기술적 지표 설명를 통한 분석 (이동평균선 ,RSI, MACD 외 다우 이론, 갠 이론, 이동평균선, 추세 분석, 엘리어트 이론 등을 참고하여 분석) - 기술적 분석에 대해 이해도가 필요해 보여요
+                
+                        5.  단기, 중기, 장기 전망
+                            단기 : 
+                            중기 :
+                            장기 : 
+                        6.  상대적 강도 평가
 
-        7.  최종 투자 결정
-            결정 : 
-            이유 : 
+                        7.  최종 투자 결정
+                            결정 : 
+                            이유 : 
 
-            
-""",
+                            
+                """,
             input_variables=["context", "question"]
         )
 
@@ -178,18 +178,18 @@ class DailyChartAnalysisAgent(Node):
     def create_context(self, daily_df: pd.DataFrame, monthly_df: pd.DataFrame, company_name: str) -> str:
         """분석 컨텍스트 생성"""
         context = f"""
-회사명: {company_name}
+                회사명: {company_name}
 
 
-        [일봉 데이터 ]
-        제공하는 데이터 날짜: {daily_df['date'].min()} ~ {daily_df['date'].max()}
-        {daily_df.to_string(index=False)}
+                        [일봉 데이터 ]
+                        제공하는 데이터 날짜: {daily_df['date'].min()} ~ {daily_df['date'].max()}
+                        {daily_df.to_string(index=False)}
 
-        [월봉 데이터]
-        제공하는 데이터 날짜: {monthly_df['date'].min()} ~ {monthly_df['date'].max()}
-        {monthly_df.to_string(index=False)}
+                        [월봉 데이터]
+                        제공하는 데이터 날짜: {monthly_df['date'].min()} ~ {monthly_df['date'].max()}
+                        {monthly_df.to_string(index=False)}
 
-"""
+                """
         return context
 
     async def analyze_stock(self, company_name: str, question: str) -> str:

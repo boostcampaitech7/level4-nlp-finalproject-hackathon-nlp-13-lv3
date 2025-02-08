@@ -1,10 +1,8 @@
-# LangGraph_base.py
-
 from typing import Annotated, List, Tuple, Iterator
 from typing_extensions import TypedDict
-import time
 
 # GraphState: 모든 노드가 공유하는 상태를 정의합니다.
+# state: Starter Node(ID, 성향 등), 보고서 진행 상태(진행중, 진행완료)
 class GraphState(TypedDict, total=False):
     company_name: Annotated[str, "분석 대상 기업명"]
     user_assets: Annotated[float, "사용자 보유 자산"]
@@ -13,11 +11,11 @@ class GraphState(TypedDict, total=False):
     investment_persona: Annotated[str, "사용자의 투자 성향 (저위험/중위험/중고위험/고위험)"]
 
     # 각 에이전트별 보고서
-    enterprise_report: Annotated[str, "기업 분석 보고서"]
+    financial_report: Annotated[str, "기업 분석 보고서"]
     news_report: Annotated[str, "뉴스 및 감성 분석 보고서"]
     macro_report: Annotated[str, "거시경제 분석 보고서"]
-    financial_report: Annotated[str, "재무제표 분석 보고서"]
-    orderbook_report: Annotated[str, "호가창 분석 보고서"]
+    fin_statements_report: Annotated[str, "재무제표 분석 보고서"]
+    daily_chart_report: Annotated[str, "일월봉 분석 보고서"]
 
     # 통합 보고서
     integrated_report: Annotated[str, "통합 보고서"]
@@ -28,9 +26,12 @@ class GraphState(TypedDict, total=False):
 
     # 최종 산출물
     final_report: Annotated[str, "최종 보고서"]
+    
+    # 스코어
+    report_score: Annotated[float, "최종 보고서 점수"]
 
     # 롤백 요청 (체크포인트)
-    rollback: Annotated[str, "롤백 대상 노드 이름"]
+    # rollback: Annotated[str, "롤백 대상 노드 이름"]
 
 
 # Node: 각 에이전트(노드)의 기본 클래스

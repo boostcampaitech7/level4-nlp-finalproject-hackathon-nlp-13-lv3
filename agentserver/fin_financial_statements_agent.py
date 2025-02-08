@@ -187,7 +187,7 @@ class FinancialStatementsAnalysisAgent(Node):
         1) state에서 company_name 가져옴
         2) 재무제표 데이터 수집/포맷
         3) LLM 분석 호출
-        4) 결과를 state['financial_statements_report'] 등에 저장
+        4) 결과를 state['fin_statements_report'] 등에 저장
         """
         print(f"[{self.name}] process() 호출")
 
@@ -216,7 +216,7 @@ class FinancialStatementsAnalysisAgent(Node):
         })
 
         # 4) 결과 저장 (예: 'financial_statements_report' 키)
-        state["financial_statements_report"] = final_answer.content
+        state["fin_statements_report"] = final_answer.content
 
         time.sleep(0.5)
         return state

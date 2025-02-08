@@ -1,5 +1,3 @@
-# fin_news_analysis_agent.py
-
 import os
 import time
 import feedparser
@@ -70,18 +68,18 @@ class NewsAnalysisAgent(Node):
         # 시스템 프롬프트: 뉴스 분석 전문가 역할 정의
         self.system_prompt = SystemMessage(content=(
             "당신은 주식 투자 관련 뉴스를 분석하는 전문가입니다. 다음 규칙을 따르세요:\n"
-            "1. 특정 기업과 관련된 최신 뉴스 기사의 타이틀, URL, 발행일 정보를 확인하세요.\n"
+            "1. 특정 기업과 관련된 최신 뉴스 기사의 타이틀 발행일 정보를 확인하세요.\n"
             "2. 뉴스 발행일을 기준으로 최신 뉴스와 과거 뉴스 간의 트렌드 변화 및 시사점을 분석하세요.\n"
             "3. 뉴스 기사에 포함된 주요 이슈(사업 확장, 경영 이슈, 시장 반응 등)를 파악하여, 해당 종목의 주식시장에 미치는 영향을 평가하세요.\n"
             "4. 긍정적 및 부정적 시그널, 투자 리스크와 기회 요인을 명확하게 서술하세요.\n"
-            "5. 최종 분석 결과는 뉴스 정보 원본(타이틀, 발행일, UR)과 매매의견과 투자 근거를 포함하여 논리적으로 작성해야 합니다."
+            "5. 최종 분석 결과는 뉴스 정보 원본(타이틀, 발행일)을 포함하여 논리적으로 작성해야 합니다."
         ))
 
         # 최종 프롬프트 템플릿: 뉴스 데이터(타이틀, 발행일, URL)를 기반으로 분석 요청
         self.final_prompt_template = PromptTemplate.from_template(
             "아래의 뉴스 데이터를 기반으로, 해당 기업의 주식에 미치는 영향과\n"
             "투자 전략을 평가하세요.\n\n"
-            "참고한 뉴스 데이터 (타이틀, 발행일, URL):\n{news_data}\n\n"
+            "참고한 뉴스 데이터 (타이틀, 발행일):\n{news_data}\n\n"
             "발행일을 참고하여 참고한 뉴스 발행일 기간을 명시하세요."
             "분석 요청:\n{query}\n\n"
             "분석 결과를 다음 형식으로 작성하세요:\n"
@@ -98,14 +96,13 @@ class NewsAnalysisAgent(Node):
 
     def format_news_data(self, news_items: list) -> str:
         """
-        불러온 뉴스 데이터를 타이틀, URL, 발행일 정보를 포함하는 문자열로 포맷합니다.
+        불러온 뉴스 데이터를 타이틀, 발행일 정보를 포함하는 문자열로 포맷합니다.
         """
         if not news_items:
             return "뉴스 데이터가 없습니다."
         formatted = ""
         for idx, news in enumerate(news_items, start=1):
-            formatted += (f"{idx}. {news['title']} (발행일: {news['published']})\n"
-                          f"   URL: {news['url']}\n")
+            formatted += (f"{idx}. {news['title']} (발행일: {news['published']})\n")
         return formatted
 
     def process(self, state: GraphState) -> GraphState:
@@ -123,7 +120,7 @@ class NewsAnalysisAgent(Node):
             "news_data": formatted_news,
             "query": query
         })
-        state["news_analysis"] = final_answer.content
+        state["news_report"] = final_answer.content
 
         time.sleep(0.5)
         return state

@@ -52,6 +52,7 @@ class FinancialReportsAnalysisAgent(Node):
             return f"API 호출 중 오류 발생: {e}"
 
     def process(self, state: GraphState) -> GraphState:
+        ## 기업명 state: company_name 입력 -> LLM으로 query 생성 -> query 입력  
         print(f"[{self.name}] process() 호출")
         query = state.get("financial_query", "")
         if not query:
@@ -66,8 +67,10 @@ class FinancialReportsAnalysisAgent(Node):
 
 if __name__ == "__main__":
     agent = FinancialReportsAnalysisAgent("FinancialReportsAnalysisAgent")
-    test_query = "2025년 3월쯤 네이버에 주식 투자를 하려고해. 전문가 및 증권사들의 의견을 참고해서 인사이트를 제공해줘."
+    test_query = " 전문가에 대한 기업 분석 의견...  정보성 있을지 "
     initial_state: GraphState = {"financial_query": test_query}
     final_state = agent.process(initial_state)
     print("\n=== 분석 결과 ===")
     print(final_state.get("financial_report", "결과 없음"))
+
+## query 입력 수정 필요 [ ]

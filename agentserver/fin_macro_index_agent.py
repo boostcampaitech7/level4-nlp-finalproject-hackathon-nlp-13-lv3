@@ -7,16 +7,17 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain_core.prompts import PromptTemplate
 import time
+import asyncio
 
-# LangGraph의 Node와 GraphState 타입을 사용한다고 가정합니다.
-from LangGraph_base import Node, GraphState   # 각 모듈에서 이 기본 클래스를 import
+# LangGraph의 Node와 GraphState 타입을 사용
+from LangGraph_base import Node, GraphState
 
 class MacroeconomicAnalysisAgent(Node):
     def __init__(self, name: str) -> None:
         super().__init__(name)
         load_dotenv()
         
-        # LLM 모델 초기화 (모델명, 온도 등 필요에 따라 조정)
+        # LLM 모델 초기화
         self.llm = ChatOpenAI(
             model_name="gpt-4o-mini",
             temperature=0.5
@@ -74,7 +75,6 @@ class MacroeconomicAnalysisAgent(Node):
     def _parse_market_data(self, soups: dict) -> dict:
         """파싱된 데이터에서 필요한 정보 추출"""
         data = {}
-        # 각 섹션별 데이터 파싱
         sections = {
             'main': ['USD/KRW', 'EUR/KRW', 'GOLD', 'WTI'],
             'bond': ['US 10Y', 'KR 10Y', 'JP 10Y', 'DE 10Y'],
@@ -114,29 +114,51 @@ class MacroeconomicAnalysisAgent(Node):
                     formatted_text += f"{item}: {info['price']} (변동: {info['change']})\n"
         return formatted_text
 
-    def run(self, query: str) -> str:
-        """
-        Agent의 메인 실행 함수.
-        1. 시장 데이터 수집 및 파싱
-        2. 데이터 가공
-        3. LLM을 통한 분석 결과 생성
-        """
+    async def analyze_macro(self, query: str) -> str:
+        """비동기 분석 실행 함수"""
         market_data = self.get_market_data()
         if not market_data:
             return "시장 데이터를 가져오는데 실패했습니다."
             
         formatted_data = self.format_market_data(market_data)
-        final_answer = self.final_answer_chain.invoke({
+        final_answer = await self.final_answer_chain.ainvoke({
             "market_data": formatted_data, 
             "query": query
         })
         return final_answer.content
 
-# 모듈 테스트 (직접 실행 시)
+    def run(self, query: str) -> str:
+        """동기식 실행을 위한 wrapper 함수"""
+        return asyncio.run(self.analyze_macro(query))
+
+    def process(self, state: GraphState) -> GraphState:
+        """
+        LangGraph에서 호출되는 메인 함수.
+        state에서 'macro_question'을 받아 분석 후, 결과를 state['macro_report']에 저장
+        """
+        print(f"[{self.name}] process() 호출")
+        
+        # query 추출 (없으면 기본값 사용)
+        query = state.get(
+            "macro_question",
+            "현재 거시경제 지표들이 한국 주식 시장에 미치는 영향을 분석하고, 투자 전략을 제시해주세요."
+        )
+
+        # 비동기 함수 호출을 동기 방식으로 처리
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        analysis_result = asyncio.run(self.analyze_macro(query))
+
+        # 분석 결과를 state에 저장
+        state["macro_report"] = analysis_result
+
+        time.sleep(0.5)
+        return state
+
+
 if __name__ == "__main__":
+    # standalone 테스트
     agent = MacroeconomicAnalysisAgent("MacroeconomicAnalysisAgent")
     test_query = "현재 거시경제 지표들이 한국 주식 시장에 미치는 영향을 분석하고, 투자 전략을 제시해주세요."
     answer = agent.run(test_query)
     print("\n=== 분석 결과 ===")
     print(answer)
-
