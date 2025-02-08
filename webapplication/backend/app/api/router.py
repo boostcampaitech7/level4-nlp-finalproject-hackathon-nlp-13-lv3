@@ -8,3 +8,5 @@ api_router.include_router(
     endpoints.router, prefix="/example", tags=["Example"])
 api_router.include_router(
     user.router, prefix="/user", tags=["User"])
+api_router.include_router(
+    user.router, prefix="/auth", tags=["Auth"])
