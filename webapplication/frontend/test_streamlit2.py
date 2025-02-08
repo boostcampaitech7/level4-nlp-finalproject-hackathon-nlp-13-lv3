@@ -8,7 +8,8 @@ import base64
 # ------------------------------
 
 # 샘플 기업 리스트 (원하는 기업명으로 수정)
-companies = ["삼성전자", "현대자동차", "네이버", "카카오", "SK하이닉스"]
+companies = ["CJ제일제당", "LG화학", "SK케미칼", "SK하이닉스",
+                       "네이버", "롯데렌탈", "엘엔에프", "카카오뱅크", "크래프톤", "한화솔루션"]
 
 # 투자 성향 질문 리스트
 questions = [
@@ -84,7 +85,7 @@ def get_table_download_link(df):
 
 
 def common_sidebar():
-
+    st.sidebar.markdown("# AI 에이전트를 활용한 주식 매매 시스템")
     nav_option = st.sidebar.radio(
         "페이지 선택", ["Dashboard", "Create Report"],
         index=0 if st.session_state.page in ["dashboard"] else 1
