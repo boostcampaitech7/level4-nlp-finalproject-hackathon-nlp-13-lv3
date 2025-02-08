@@ -84,27 +84,24 @@ def get_table_download_link(df):
 
 
 def common_sidebar():
-    st.sidebar.markdown("### Navigation")
-    # 네비게이션 라디오: Dashboard와 Create Report 선택
-    # (투자 성향 분석과 보고서 열람 페이지는 Create Report의 하위 흐름으로 처리)
+
     nav_option = st.sidebar.radio(
         "페이지 선택", ["Dashboard", "Create Report"],
         index=0 if st.session_state.page in ["dashboard"] else 1
     )
-    # 네비게이션 선택에 따라 st.session_state.page 업데이트
     if nav_option == "Dashboard":
         st.session_state.page = "dashboard"
     elif nav_option == "Create Report":
-        # 만약 아직 Create Report 페이지로 진입하지 않았다면 기본값으로 설정
         if st.session_state.page not in ["create_report", "investor_analysis", "report_view"]:
             st.session_state.page = "create_report"
-        # Create Report 관련 페이지에서는 기업 선택 위젯 표시
-        company = st.sidebar.selectbox(
-            "분석할 기업 선택", companies,
-            index=0 if 'selected_company' not in st.session_state else companies.index(
-                st.session_state.selected_company)
-        )
-        st.session_state.selected_company = company
+
+    # 기업 선택 selectbox는 항상 표시
+    company = st.sidebar.selectbox(
+        "분석할 기업 선택", companies,
+        index=0 if 'selected_company' not in st.session_state else companies.index(
+            st.session_state.selected_company)
+    )
+    st.session_state.selected_company = company
 
 # ------------------------------
 # 페이지 함수 정의
