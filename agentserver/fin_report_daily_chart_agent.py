@@ -72,13 +72,37 @@ class DailyChartAnalysisAgent(Node):
 질문:
 {question}
 
-아래 단계를 고려해 분석을 진행하세요:
-1. 추세 분석 (일봉/월봉 추세, 이동평균선, 거래량 등)
-2. 패턴 분석 (캔들 패턴, 지지/저항 등)
-3. 단기 및 중기 전망
-4. 투자자들을 위한 제안 (매매의견, 손절/익절 전략 등)
+        다음 단계로 분석 후 리포트 형태로 뽑아주세요:
+        1.  월봉,일봉  주요 지지선과 저항선
+            일봉
+            지지선 :
+            저항선 :
+            근거 : 
+            월봉
+            지지선 :
+            저항선 :
+            근거 
+        2.  전체 거래량 분석
+            금일 거래량과 이전 거래량 비교 :      
+        3.  현재 가격, 추천 구매 가격, 추천 손절 가격, 추천 익절 가격 제시 및 근거 설명
+            금일 현재가 :
+            추천 구매 가격 :
+            추천 익절 가격 :
+            추천 손절 가격 :
+            근거 : 
+        4.  주요 기술적 지표 설명를 통한 분석 (이동평균선 ,RSI, MACD 외 다우 이론, 갠 이론, 이동평균선, 추세 분석, 엘리어트 이론 등을 참고하여 분석) - 기술적 분석에 대해 이해도가 필요해 보여요
+   
+        5.  단기, 중기, 장기 전망
+            단기 : 
+            중기 :
+            장기 : 
+        6.  상대적 강도 평가
 
-분석 결과:
+        7.  최종 투자 결정
+            결정 : 
+            이유 : 
+
+            
 """,
             input_variables=["context", "question"]
         )
@@ -156,16 +180,15 @@ class DailyChartAnalysisAgent(Node):
         context = f"""
 회사명: {company_name}
 
-[일봉 데이터 요약]
-기간: {daily_df['date'].min()} ~ {daily_df['date'].max()}
-최근 종가: {daily_df['close'].iloc[-1]}
-최근 5일 종가 추이: {', '.join(map(str, daily_df['close'].tail().tolist()))}
-최근 5일 거래량 추이: {', '.join(map(str, daily_df['volume'].tail().tolist()))}
 
-[월봉 데이터 요약]
-기간: {monthly_df['date'].min()} ~ {monthly_df['date'].max()}
-최근 월 종가: {monthly_df['close'].iloc[-1]}
-최근 3개월 종가 추이: {', '.join(map(str, monthly_df['close'].tail(3).tolist()))}
+        [일봉 데이터 ]
+        제공하는 데이터 날짜: {daily_df['date'].min()} ~ {daily_df['date'].max()}
+        {daily_df.to_string(index=False)}
+
+        [월봉 데이터]
+        제공하는 데이터 날짜: {monthly_df['date'].min()} ~ {monthly_df['date'].max()}
+        {monthly_df.to_string(index=False)}
+
 """
         return context
 
