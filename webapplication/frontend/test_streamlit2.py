@@ -211,31 +211,124 @@ def create_report_page():
 
 def investor_analysis_page():
     st.title("투자 성향 분석")
-    total_score = 0
-    for question in questions:
-        score = st.slider(question, 1, 5, 3, key=question)
-        total_score += score
-    investor_type = get_investor_type(total_score)
-    st.write(f"당신의 투자 성향: **{investor_type}**")
-    if st.button("투자 보고서 생성"):
-        # 선택된 기업은 사이드바의 선택값 사용
-        selected_company = st.session_state.selected_company if 'selected_company' in st.session_state else companies[
-            0]
-        report = generate_report(selected_company, investor_type)
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        new_report = pd.DataFrame({
-            'Date': [now],
-            'Company': [selected_company],
-            'Investor Type': [investor_type],
-            'Report': [report]
-        })
-        # 보고서 DataFrame에 추가
-        st.session_state.reports = pd.concat(
-            [st.session_state.reports, new_report], ignore_index=True
+
+    # 각 질문의 옵션 설명을 딕셔너리로 정의
+    q1_options = {
+        1: "1점: 크게 불안하고, 매도나 손절을 우선 고려한다.",
+        2: "2점: 다소 불안하긴 하지만 시장을 지켜본다.",
+        3: "3점: 어느 정도 변동은 감수하고, 상황을 조금 더 살핀다.",
+        4: "4점: 변동을 기회로 삼아 추가 매수를 검토한다.",
+        5: "5점: 변동 자체를 자연스러운 현상으로 여기고 침착하게 대응한다."
+    }
+    q2_options = {
+        1: "1점: 거의 감수할 수 없으며, 원금 보전에 중점을 둔다.",
+        2: "2점: 소폭의 손실(약 5~10%)은 감수할 수 있다.",
+        3: "3점: 중간 정도의 손실(약 10~20%)은 장기적으로 회복 가능하다고 본다.",
+        4: "4점: 상당한 손실(약 20~30%)도 재투자 기회로 본다.",
+        5: "5점: 고위험·고수익 추구로 큰 폭의 손실도 감수할 수 있다."
+    }
+    q3_options = {
+        1: "1점: 1년 미만(단기 투자, 현금화가 매우 중요)",
+        2: "2점: 1~2년 정도",
+        3: "3점: 3~5년 정도",
+        4: "4점: 5~10년 정도",
+        5: "5점: 10년 이상(매우 장기)"
+    }
+    q4_options = {
+        1: "1점: 거의 없음. 주식 용어 이해도도 낮음.",
+        2: "2점: 기본적인 용어는 알지만, 매매 경험은 많지 않음.",
+        3: "3점: 주식 매매를 몇 차례 해봤으며, 기본적인 분석 방법을 조금 알음.",
+        4: "4점: 다양한 종목과 금융상품(ETF, 펀드 등)을 경험해 봄.",
+        5: "5점: 주식뿐 아니라 선물·옵션 등 파생상품까지 적극 운용 경험이 있음."
+    }
+    q5_options = {
+        1: "1점: 손실 가능성. 위험은 최대한 피하고 싶다.",
+        2: "2점: 손실이 얼마나 될지 우선 계산해본 후 수익을 살핀다.",
+        3: "3점: 위험과 수익을 균형적으로 고려한다.",
+        4: "4점: 기대 수익이 충분하다면 어느 정도 위험은 감수한다.",
+        5: "5점: 높은 수익률이라면 위험이 크더라도 투자할 의향이 높다."
+    }
+    q6_options = {
+        1: "1점: 전혀 고려하지 않는다. 오히려 전량 매도나 손절을 고민한다.",
+        2: "2점: 신중하게 접근하되, 대부분 현금 보유를 선호한다.",
+        3: "3점: 일부 금액은 추가 매수할 수 있지만, 큰 규모는 어렵다.",
+        4: "4점: 시장을 분석해 보고, 적극적으로 저점 매수를 노린다.",
+        5: "5점: 시장 하락 시 대규모 매수를 통해 수익률 극대화를 노린다."
+    }
+    q7_options = {
+        1: "1점: 변동성이 낮고 안정적인 대형 우량주 위주",
+        2: "2점: 배당주·채권형ETF 등 비교적 안정성이 높은 자산",
+        3: "3점: 우량주와 성장주를 적절히 섞어 분산 투자",
+        4: "4점: 높은 성장 잠재력을 가진 중소형주, 테마주 등에 관심이 많음",
+        5: "5점: 단기간 급등주, 고위험 섹터 등 공격적인 종목"
+    }
+    q8_options = {
+        1: "1점: 원금 보전 및 소폭의 이자 수준 수익",
+        2: "2점: 인플레이션 헤지 정도의 수익",
+        3: "3점: 주식 시장 평균 정도의 수익(시장 수익률) 추구",
+        4: "4점: 시장 대비 초과 수익(알파) 추구",
+        5: "5점: 단기간 수익 극대화, 공격적인 트레이딩 지향"
+    }
+
+    # st.form을 사용하여 한 번에 응답받기
+    with st.form("investor_analysis_form"):
+        q1 = st.radio(
+            "Q1. 주식 시장이 단기간에 큰 폭으로 변동할 때, 나의 심리 상태는 어떠한가요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q1_options[x],
+            index=2
         )
-        st.session_state.report_generated = report  # 방금 생성한 보고서 저장
-        st.session_state.page = "report_view"
-        st.rerun()
+        q2 = st.radio(
+            "Q2. 투자 손실이 발생했을 때, 이를 회복하기 위해 감수할 수 있는 손실 수준은 어느 정도인가요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q2_options[x],
+            index=2
+        )
+        q3 = st.radio(
+            "Q3. 나의 투자 기간(목표로 하는 투자 유지 기간)은 어느 정도인가요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q3_options[x],
+            index=2
+        )
+        q4 = st.radio(
+            "Q4. 주식 투자 경험 및 금융상품 지식 수준은 어느 정도인가요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q4_options[x],
+            index=2
+        )
+        q5 = st.radio(
+            "Q5. 투자 결정 시, 손실 가능성과 수익 가능성 중 어느 쪽을 더 먼저 고려하나요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q5_options[x],
+            index=2
+        )
+        q6 = st.radio(
+            "Q6. 급격한 시장 하락 시, 추가 자금을 투입하거나 매수를 고려하는 편인가요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q6_options[x],
+            index=2
+        )
+        q7 = st.radio(
+            "Q7. 종목 선정 시, 주로 어떤 기준을 가장 중시하나요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q7_options[x],
+            index=2
+        )
+        q8 = st.radio(
+            "Q8. 본인이 생각하는 투자 목적은 무엇인가요?",
+            options=[1, 2, 3, 4, 5],
+            format_func=lambda x: q8_options[x],
+            index=2
+        )
+        submitted = st.form_submit_button("제출")
+
+    if submitted:
+        total_score = q1 + q2 + q3 + q4 + q5 + q6 + q7 + q8
+        investor_type = get_investor_type(total_score)
+        st.success(f"총 점수: {total_score}점\n\n당신은 **{investor_type}**입니다.")
+        # 필요 시 세션 상태에 저장
+        st.session_state.investor_total_score = total_score
+        st.session_state.investor_type = investor_type
 
 # 5. 보고서 열람 페이지 (방금 생성한 보고서 보여주기)
 
