@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import base64
-
+import streamlit.components.v1 as components
 # ------------------------------
 # 전역 변수 및 함수 정의
 # ------------------------------
