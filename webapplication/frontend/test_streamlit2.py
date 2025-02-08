@@ -117,6 +117,7 @@ def login_page():
     st.subheader("Please Login")
     if st.button("Login"):
         st.session_state.logged_in = True
+        st.query_params.login_status = "login"
         # 로그인 시 기본 페이지를 Dashboard로 설정
         st.session_state.page = "dashboard"
         # 초기 보고서 저장용 DataFrame 생성 (만약 아직 없으면)
@@ -128,42 +129,43 @@ def login_page():
 
 
 def sidebar_logout_button():
-    with st.sidebar:
-        # 사이드바 하단에 고정된 로그아웃 버튼 HTML/CSS 주입
-        components.html(
-            """
-            <style>
-            /* 사이드바 내부 컨테이너를 기준으로 절대 위치 지정 */
-            .sidebar-logout-container {
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                right: 10px;
-                z-index: 100;
-            }
-            .sidebar-logout-btn {
-                background-color: #f44336;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 4px;
-                text-align: center;
-                font-weight: bold;
-                text-decoration: none;
-                display: block;
-            }
-            </style>
-            <div class="sidebar-logout-container">
-                <a href="?logout=true" class="sidebar-logout-btn">Log Out</a>
-            </div>
-            """,
-            height=80  # 높이를 지정해서 버튼이 보이도록 함
-        )
+
+    # 사이드바 하단에 고정된 로그아웃 버튼 HTML/CSS 주입
+    st.sidebar.markdown(
+        """
+        <style>
+        /* 컨테이너는 오른쪽 하단에 고정되고, 좌우 폭은 내용에 맞게 조정 */
+        .sidebar-logout-container {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+        /* 버튼은 인라인 블록으로 설정하여 내용에 맞게 크기가 결정됨 */
+        .sidebar-logout-btn {
+            display: inline-block;
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        </style>
+        <div class="sidebar-logout-container">
+            <a href="?login_status=logout" class="sidebar-logout-btn">Log Out</a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     # 쿼리 파라미터에 "logout"이 있으면 세션 상태 초기화 후 로그인 페이지로 전환
     params = st.query_params
-    if "logout" in params:
+    if "login_status" in params and params["login_status"][0].lower() == "logout":
         st.session_state.logged_in = False
         st.session_state.page = "login"
-        st.experimental_set_query_params()  # 쿼리 파라미터 초기화
+        # st.query_params  # 쿼리 파라미터 초기화
+        st.session_state.clear()
         st.rerun()
 
 # 2. Dashboard (보고서 열람) 페이지
