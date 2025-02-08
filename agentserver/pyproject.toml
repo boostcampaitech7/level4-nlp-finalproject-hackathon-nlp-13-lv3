@@ -21,6 +21,14 @@ bs4 = "^0.0.1"
 mojito2 = "^0.1.6"
 pandas = "^2.2.3"
 lxml = "^5.3.0"
+yfinance = "^0.2.52"
+fastapi = "^0.115.8"
+sentence-transformers = "^3.4.1"
+pydantic = "^2.10.6"
+logging = "^0.4.9.6"
+elasticsearch = "^8.17.1"
+langchain-community = "0.3.15"
+uvicorn = "^0.34.0"
 
 
 [build-system]
