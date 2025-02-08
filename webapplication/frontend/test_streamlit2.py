@@ -363,12 +363,16 @@ def main():
         common_sidebar()
         # st.session_state.page에 따라 메인 프레임 콘텐츠 전환
         if st.session_state.page == "dashboard":
+            st.query_params.page = "dashboard"
             dashboard_page()
         elif st.session_state.page == "create_report":
+            st.query_params.page = "create_report"
             create_report_page()
         elif st.session_state.page == "investor_analysis":
+            st.query_params.page = "analysis"
             investor_analysis_page()
         elif st.session_state.page == "report_view":
+            st.query_params.page = "report_view"
             report_view_page()
 
 
