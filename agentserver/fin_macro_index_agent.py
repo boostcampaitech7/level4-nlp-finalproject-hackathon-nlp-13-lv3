@@ -145,7 +145,6 @@ class MacroeconomicAnalysisAgent(Node):
         )
 
         # 비동기 함수 호출을 동기 방식으로 처리
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         analysis_result = asyncio.run(self.analyze_macro(query))
 
         # 분석 결과를 state에 저장
