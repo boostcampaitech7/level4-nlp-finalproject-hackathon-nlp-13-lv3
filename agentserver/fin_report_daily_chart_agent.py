@@ -236,7 +236,6 @@ class DailyChartAnalysisAgent(Node):
         question = state.get("chart_question", "차트 분석을 요청합니다.")
 
         # 비동기 함수 호출을 동기 방식으로 처리
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         analysis_result = asyncio.run(self.analyze_stock(company, question))
 
         # 분석 결과를 state에 저장
