@@ -1,1 +1,1 @@
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8090
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8090
