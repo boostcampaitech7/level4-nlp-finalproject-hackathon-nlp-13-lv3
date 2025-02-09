@@ -16,7 +16,7 @@ from final_analysis_agent import FinalAnalysisAgent
 from fin_report_scorer_agent import ReportScorerAgent
 from report_supervisor_agent import ReportSupervisorAgent, get_next_node
 
-from app.db.session import get_db
+from app.db.session import get_db, get_db_session
 from app.schemas.db import Stock, Task
 
 import requests
@@ -123,74 +123,74 @@ def parse_stock_position(report: str) -> str:
 
 
 def main():
-    try:
-        db = get_db()
+    with get_db_session() as db:
+        try:
 
-        tasks = db.query(Task).filter(Task.status == '시작 전').first()
+            tasks = db.query(Task).filter(Task.status == '시작 전').first()
 
-        if tasks is None:
-            print("**************Task가 없습니다.************************")
-            return
+            if tasks is None:
+                print("**************Task가 없습니다.************************")
+                return
 
-        initial_state: GraphState = {
-            "company_name": tasks.stock_name,
-            "company_code": tasks.stock_code,
-            "customer_id": tasks.create_user_id,
-            "task_id": tasks.task_id,
-            "date": tasks.created_at,
-            "user_assets": 10000000.0,
-            "financial_query": "2025년 3월 기준, 해당 기업의 재무 리포트 및 투자 전망 분석",
-            "investment_persona": tasks.investor_type
-        }
+            initial_state: GraphState = {
+                "company_name": tasks.stock_name,
+                "company_code": tasks.stock_code,
+                "customer_id": tasks.create_user_id,
+                "task_id": tasks.task_id,
+                "date": tasks.created_at,
+                "user_assets": 10000000.0,
+                "financial_query": "2025년 3월 기준, 해당 기업의 재무 리포트 및 투자 전망 분석",
+                "investment_persona": tasks.investor_type
+            }
 
-        db.query(Task).filter(Task.task_id == tasks.task_id).update(
-            {Task.status: "생성 중", Task.status_message: "AI 전문가와 분석가가 보고서 생성 중"})
-        db.commit()
-
-        final_state = None
-        graph = create_graph()
-        for node_name, state in graph.run_stream(initial_state):
-            print(
-                f"[Stream] {node_name} 완료. 현재 state keys: {list(state.keys())}")
-            final_state = state
-
-        print("\n===== 최종 보고서와 매매 의견 및 포트폴리오 =====")
-        # 최종 보고서는 FinalAnalysisAgent 또는 EndNode에서 생성된 state에 있음
-        print(final_state.get("final_report", "최종 보고서가 생성되지 않았습니다."))
-        print(final_state.get("integrated_report", "최종 통합보고서가 생성되지 않았습니다."))
-
-        now = datetime.now(ZoneInfo("Asia/Seoul"))
-
-        if final_state.get("final_report") is not None and final_state.get("integrated_report") is not None:
-            stock_position = parse_stock_position(
-                final_state.get("final_report"))
             db.query(Task).filter(Task.task_id == tasks.task_id).update(
-                {Task.status: "완료", Task.report_generate: final_state.get("final_report") + "\n" + final_state.get("integrated_report"),
-                 Task.stock_position: stock_position, Task.stock_justification: final_state.get("integrated_report"), Task.modified_at: now})
+                {Task.status: "생성 중", Task.status_message: "AI 전문가와 분석가가 보고서 생성 중"})
             db.commit()
-        else:
-            raise Exception("최종 보고서 생성 실패")
 
-        request_data = {
-            "user_id": tasks.create_user_id,
-            "stock_code": tasks.stock_code,
-            "investor_type": tasks.investor_type,
-            "task_id": tasks.task_id,
-            "position": stock_position,
-            "justification": final_state.get("integrated_report"),
+            final_state = None
+            graph = create_graph()
+            for node_name, state in graph.run_stream(initial_state):
+                print(
+                    f"[Stream] {node_name} 완료. 현재 state keys: {list(state.keys())}")
+                final_state = state
 
-        }
-        response = requests.post(
-            f"{MANAGER_API_URL}/trade", data=request_data)
+            print("\n===== 최종 보고서와 매매 의견 및 포트폴리오 =====")
+            # 최종 보고서는 FinalAnalysisAgent 또는 EndNode에서 생성된 state에 있음
+            print(final_state.get("final_report", "최종 보고서가 생성되지 않았습니다."))
+            print(final_state.get("integrated_report", "최종 통합보고서가 생성되지 않았습니다."))
 
-        print(response.text)
+            now = datetime.now(ZoneInfo("Asia/Seoul"))
 
-    except Exception as e:
-        print(f"Error: {e}")
-        db.query(Task).filter(Task.task_id == tasks.task_id).update(
-            {Task.status: "실패", Task.status_message: str(e)})
-        db.commit()
-        return
+            if final_state.get("final_report") is not None and final_state.get("integrated_report") is not None:
+                stock_position = parse_stock_position(
+                    final_state.get("final_report"))
+                db.query(Task).filter(Task.task_id == tasks.task_id).update(
+                    {Task.status: "완료", Task.report_generate: final_state.get("final_report") + "\n" + final_state.get("integrated_report"),
+                     Task.stock_position: stock_position, Task.stock_justification: final_state.get("integrated_report"), Task.modified_at: now})
+                db.commit()
+            else:
+                raise Exception("최종 보고서 생성 실패")
+
+            request_data = {
+                "user_id": tasks.create_user_id,
+                "stock_code": tasks.stock_code,
+                "investor_type": tasks.investor_type,
+                "task_id": tasks.task_id,
+                "position": stock_position,
+                "justification": final_state.get("integrated_report"),
+
+            }
+            response = requests.post(
+                "http://10.28.224.49:8000/trade", data=request_data)
+
+            print(response.text)
+
+        except Exception as e:
+            print(f"Error: {e}")
+            db.query(Task).filter(Task.task_id == tasks.task_id).update(
+                {Task.status: "실패", Task.status_message: str(e)})
+            db.commit()
+            return
 
 
 if __name__ == "__main__":
