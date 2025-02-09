@@ -41,8 +41,10 @@ def create_graph() -> Graph:
     financial_node = FinancialReportsAnalysisAgent("FinancialReportsAnalysisAgent")
     daily_chart_node = DailyChartAnalysisAgent("DailyChartAnalysisAgent")
     integration_node = ReportIntegrationNode("ReportIntegrationNode")
-    scorer_node = ReportScorerAgent("ReportScorerAgent", eval_model="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B")
-    supervisor_node = ReportSupervisorAgent("ReportSupervisorAgent", quality_threshold=5.0)
+    # LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct
+    #deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+    scorer_node = ReportScorerAgent("ReportScorerAgent", eval_model="LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct")
+    supervisor_node = ReportSupervisorAgent("ReportSupervisorAgent", quality_threshold=9.0)
     final_node = FinalAnalysisAgent("FinalAnalysisAgent")
     end_node = EndNode()
 

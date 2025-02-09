@@ -66,7 +66,7 @@ class FinancialReportsAnalysisAgent(Node):
             return state
         
         # financial_query가 있으면 사용, 없으면 기본 쿼리 생성
-        query = state.get("financial_query", f"{company}의 최신 증권 리포트를 분석하여 투자 전략 및 매매의견을 제시해 주세요.")
+        query = state.get("financial_query", f"{company}의 증권 리포트를 분석하여 2025년 투자 전략 및 매매의견을 제시해 주세요.")
         
         # API 호출 및 LLM 분석
         api_context = self.call_financial_api(query)

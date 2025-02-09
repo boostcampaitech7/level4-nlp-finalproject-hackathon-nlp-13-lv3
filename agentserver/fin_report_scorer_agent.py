@@ -63,7 +63,9 @@ class ReportScorerAgent(Node):
             state["report_score"] = 0.0
             return state
 
-        prompt = report  # 평가 대상 텍스트로 사용
+        prompt = f"""
+        다음 주식 리포트가 잘 작성되어 있는지 꼼꼼하게 확인하고, 리포트의 품질을 0에서 9점 사이의 점수로 평가해주세요.\n {report}\n
+        평가 점수: """  # 평가 대상 텍스트로 사용
         inputs = self.tokenizer(prompt, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         outputs = self.model(**inputs)
