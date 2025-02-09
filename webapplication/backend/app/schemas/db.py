@@ -3,7 +3,7 @@ from datetime import datetime
 
 from typing import Optional
 from sqlmodel import SQLModel, Field
-from sqlalchemy import Column, Integer, String, TIMESTAMP
+from sqlalchemy import Column, Integer, String, TIMESTAMP, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.schema import Identity, UniqueConstraint
 
@@ -56,4 +56,76 @@ class Users(SQLModel, table=True):
     # g_code: NOT NULL, UNIQUE
     g_code: str = Field(
         sa_column=Column(String, nullable=False)
+    )
+
+
+class Task(SQLModel, table=True):
+    __tablename__ = "tasks"
+    __table_args__ = (
+        UniqueConstraint("task_id", name="tasks_unique"),
+        {"schema": "invest"},
+    )
+
+    # id: 정수형 기본키, GENERATED ALWAYS AS IDENTITY로 자동 생성
+    id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(
+            Integer,
+            Identity(always=True),  # GENERATED ALWAYS AS IDENTITY
+            primary_key=True,
+            nullable=False,
+        )
+    )
+    # task_id: UUID 타입, UNIQUE 제약 조건
+    task_id: str = Field(
+        sa_column=Column(UUID(as_uuid=True), nullable=False)
+    )
+    status: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True)
+    )
+    report_generate: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True)
+    )
+    report_summary: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True)
+    )
+    created_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=True)
+    )
+    status_message: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True)
+    )
+    create_user_id: Optional[uuid.UUID] = Field(
+        default=None,
+        sa_column=Column(UUID(as_uuid=True), nullable=True)
+    )
+    kakao_send_status: Optional[bool] = Field(
+        default=None,
+        sa_column=Column(Boolean, nullable=True)
+    )
+    kakao_send_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=True)
+    )
+    stock_code: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True)
+    )
+    # "position"은 예약어이므로, 컬럼 이름을 명시적으로 지정합니다.
+    stock_position: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True)
+    )
+    stock_justification: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True)
+    )
+    modified_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=True)
     )
