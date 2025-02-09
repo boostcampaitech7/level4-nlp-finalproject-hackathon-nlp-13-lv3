@@ -1,5 +1,5 @@
 
-
+import os
 # LangGraph.py
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -21,6 +21,11 @@ from app.schemas.db import Stock, Task
 
 import requests
 import json
+
+from dotenv import load_dotenv
+
+MANAGER_API_URL = os.environ.get("MANAGER_URL")
+load_dotenv()
 # StartNode 및 EndNode 정의
 START = "START"
 END = "END"
@@ -176,7 +181,7 @@ def main():
 
         }
         response = requests.post(
-            "http://localhost:8000/run_graph", data=request_data)
+            f"{MANAGER_API_URL}/trade", data=request_data)
 
         print(response.text)
 
