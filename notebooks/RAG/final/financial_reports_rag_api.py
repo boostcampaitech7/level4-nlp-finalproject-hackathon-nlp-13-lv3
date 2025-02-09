@@ -23,9 +23,18 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
-logger = logging.getLogger(__name__)
+log_file = os.path.join('./logs', "app.log")
 
+# logging 기본 설정 (콘솔과 파일에 로그 출력)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),                # 콘솔 출력
+        logging.FileHandler(log_file, encoding="utf-8")  # 파일 출력
+    ]
+)
+logger = logging.getLogger(__name__)
 # Input/Output models
 class QueryInput(BaseModel):
     query: str
@@ -246,6 +255,7 @@ class RAGSystem:
             logger.error(error_msg)
             raise HTTPException(status_code=500, detail=error_msg)
 
+
 # FastAPI app
 app = FastAPI(title="Financial Report Analysis API")
 
@@ -263,8 +273,10 @@ rag_system = RAGSystem()
 async def process_query(query_input: QueryInput):
     try:
         result = rag_system.process_query(query_input.query)
+        logger.info(result)
         return QueryOutput(**result)
     except Exception as e:
+        logger.debug(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
