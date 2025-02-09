@@ -315,7 +315,6 @@ class RAGSystem:
 
 # Initialize RAG system
 
-
     def rewrite_query(self, original_query: str, previous_answer: str, groundedness_explanation: str) -> str:
         """
         이전 답변에서 누락된 정보만 찾도록 질문 재작성
@@ -607,9 +606,4 @@ async def process_query(query_input: QueryInput):
 # 8. 서버 실행
 if __name__ == "__main__":
     import uvicorn
-<< << << < HEAD
-uvicorn.run(app, host="0.0.0.0", port=30800)
-
-== == == =
-uvicorn.run(app, host="0.0.0.0", port=8090)
->>>>>> > 1ce743fbc2f88284bf2b19ebe9cef110785ca1e2
+    uvicorn.run(app, host="0.0.0.0", port=30800)
