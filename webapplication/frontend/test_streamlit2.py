@@ -5,6 +5,7 @@ import base64
 import streamlit.components.v1 as components
 
 from auth import set_google_login_btn
+import request as req
 # ------------------------------
 # 전역 변수 및 함수 정의
 # ------------------------------
@@ -35,6 +36,30 @@ def get_investor_type(score):
         return "중고위험(적극적) 투자자"
     else:
         return "고위험(공격적) 투자자"
+
+
+def get_stock_code(stock_name):
+
+    if stock_name == "CJ제일제당":
+        return "097950"
+    elif stock_name == "LG화학":
+        return "051910"
+    elif stock_name == "SK케미칼":
+        return "285130"
+    elif stock_name == "SK하이닉스":
+        return "000660"
+    elif stock_name == "네이버":
+        return "035420"
+    elif stock_name == "롯데렌탈":
+        return "089860"
+    elif stock_name == "엘엔에프":
+        return "066970"
+    elif stock_name == "카카오뱅크":
+        return "323410"
+    elif stock_name == "크래프톤":
+        return "259960"
+    elif stock_name == "한화솔루션":
+        return "009830"
 
 
 def generate_report(company, investor_type):
@@ -357,6 +382,11 @@ def investor_analysis_page():
             st.session_state.report_generated = report  # 방금 생성한 보고서를 세션에 저장
             st.session_state.page = "report_view"         # 다음 페이지로 전환
             st.session_state.form_submitted = False
+            user_id = st.query_params.get("user_id")
+            stock_code = get_stock_code(selected_company)
+
+            req.create_report_task(user_id, stock_code,
+                                   st.session_state.investor_type)
             st.rerun()
 
 
