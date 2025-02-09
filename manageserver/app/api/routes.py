@@ -17,7 +17,7 @@ async def execute_trade(trade: TradeRequest):
 
     # ✅ `Database` 객체에서 `save_trade_request()`를 호출하도록 수정
     db = kakao_notifier.db  # `Database` 객체 가져오기
-    trade_id = db.save_trade_request(trade.user_id, trade.stock_code, trade.position, trade.justification)  # ✅ 수정된 코드
+    trade_id = db.save_trade_request(trade.user_id, trade.stock_code, trade.position, trade.justification) 
 
     # ✅ 거래 요청 저장 후 즉시 `send_trade_request()` 실행
     result = kakao_notifier.send_trade_request(trade_id)
