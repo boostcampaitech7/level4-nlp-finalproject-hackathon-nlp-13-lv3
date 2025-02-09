@@ -44,7 +44,7 @@ def create_graph() -> Graph:
     # LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct
     #deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
     scorer_node = ReportScorerAgent("ReportScorerAgent", eval_model="LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct")
-    supervisor_node = ReportSupervisorAgent("ReportSupervisorAgent", quality_threshold=9.0)
+    supervisor_node = ReportSupervisorAgent("ReportSupervisorAgent", quality_threshold=5.0)
     final_node = FinalAnalysisAgent("FinalAnalysisAgent")
     end_node = EndNode()
 
@@ -98,9 +98,10 @@ def main():
         print(f"[Stream] {node_name} 완료. 현재 state keys: {list(state.keys())}")
         final_state = state
 
-    print("\n===== 최종 보고서 =====")
+    print("\n===== 최종 보고서와 매매 의견 및 포트폴리오 =====")
     # 최종 보고서는 FinalAnalysisAgent 또는 EndNode에서 생성된 state에 있음
-    print(final_state.get("final_report", final_state.get("integrated_report", "최종 보고서가 생성되지 않았습니다.")))
+    print(final_state.get("final_report", "최종 보고서가 생성되지 않았습니다."))
+    print(final_state.get("integrated_report", "최종 통합보고서가 생성되지 않았습니다."))
 
 if __name__ == "__main__":
     main()

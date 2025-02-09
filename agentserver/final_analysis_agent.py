@@ -48,14 +48,14 @@ class FinalAnalysisAgent(Node):
         # 최종 프롬프트 템플릿 정의 (원본 코드)
         self.final_prompt_template = PromptTemplate.from_template(
             """다음은 {target}의 주식과 관련된 리포트입니다.
-{report}
+            {report}
 
-{user_persona}
-반드시 아래 JSON 형식으로만 답변하세요. 다른 설명은 절대 추가하지 마세요:
-{{
-    "recommendation": "매수/매도/관망 중 하나",
-    "weights": "사용 가능한 자본의 X% 매수/매도"
-}}"""
+            {user_persona}
+            반드시 아래 JSON 형식으로만 답변하세요. 다른 설명은 절대 추가하지 마세요:
+            {{
+                "recommendation": "매수/매도/관망 중 하나",
+                "weights": "사용 가능한 자본의 X% 매수/매도"
+            }}"""
         )
 
     def extract_json(self, raw_response: str) -> str:
