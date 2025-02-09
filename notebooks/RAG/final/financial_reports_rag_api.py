@@ -18,6 +18,7 @@ from elasticsearch import Elasticsearch
 from pydantic import BaseModel, Field, PrivateAttr
 import requests
 
+from fastapi.middleware.cors import CORSMiddleware
 # Load environment variables
 load_dotenv()
 
@@ -248,6 +249,13 @@ class RAGSystem:
 # FastAPI app
 app = FastAPI(title="Financial Report Analysis API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Initialize RAG system
 rag_system = RAGSystem()
 
