@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage
 from langchain_core.prompts import PromptTemplate
 
-# LangGraph의 기본 클래스와 상태 타입 (파일명이 LangGraph_base.py)
+# LangGraph_base에서 Node, GraphState import (파일명이 LangGraph_base.py)
 from LangGraph_base import Node, GraphState
 
 class GoogleNewsFetcher:
@@ -68,7 +68,7 @@ class NewsAnalysisAgent(Node):
         # 시스템 프롬프트: 뉴스 분석 전문가 역할 정의
         self.system_prompt = SystemMessage(content=(
             "당신은 주식 투자 관련 뉴스를 분석하는 전문가입니다. 다음 규칙을 따르세요:\n"
-            "1. 특정 기업과 관련된 최신 뉴스 기사의 타이틀 발행일 정보를 확인하세요.\n"
+            "1. 특정 기업과 관련된 최신 뉴스 기사의 타이틀과 발행일 정보를 확인하세요.\n"
             "2. 뉴스 발행일을 기준으로 최신 뉴스와 과거 뉴스 간의 트렌드 변화 및 시사점을 분석하세요.\n"
             "3. 뉴스 기사에 포함된 주요 이슈(사업 확장, 경영 이슈, 시장 반응 등)를 파악하여, 해당 종목의 주식시장에 미치는 영향을 평가하세요.\n"
             "4. 긍정적 및 부정적 시그널, 투자 리스크와 기회 요인을 명확하게 서술하세요.\n"
@@ -80,7 +80,7 @@ class NewsAnalysisAgent(Node):
             "아래의 뉴스 데이터를 기반으로, 해당 기업의 주식에 미치는 영향과\n"
             "투자 전략을 평가하세요.\n\n"
             "참고한 뉴스 데이터 (타이틀, 발행일):\n{news_data}\n\n"
-            "발행일을 참고하여 참고한 뉴스 발행일 기간을 명시하세요."
+            "발행일을 참고하여 뉴스 발행일 기간을 명시하세요.\n\n"
             "분석 요청:\n{query}\n\n"
             "분석 결과를 다음 형식으로 작성하세요:\n"
             "뉴스 데이터:\n"
@@ -102,7 +102,7 @@ class NewsAnalysisAgent(Node):
             return "뉴스 데이터가 없습니다."
         formatted = ""
         for idx, news in enumerate(news_items, start=1):
-            formatted += (f"{idx}. {news['title']} (발행일: {news['published']})\n")
+            formatted += f"{idx}. {news['title']} (발행일: {news['published']})\n"
         return formatted
 
     def process(self, state: GraphState) -> GraphState:
@@ -112,8 +112,7 @@ class NewsAnalysisAgent(Node):
         # 특정 기업 관련 최신 뉴스 10개를 불러옴
         news_items = self.news_fetcher.fetch_news_by_keyword(company, k=10)
         formatted_news = self.format_news_data(news_items)
-        state["news_report"] = formatted_news  # 뉴스 원시 데이터 저장
-
+        
         # LLM을 통한 뉴스 분석 실행
         query = f"해당 뉴스 데이터가 {company} 주식 시장에 미치는 영향과 투자 전략에 대해 분석해주세요."
         final_answer = self.final_answer_chain.invoke({
@@ -127,8 +126,7 @@ class NewsAnalysisAgent(Node):
 
 if __name__ == "__main__":
     agent = NewsAnalysisAgent("NewsAnalysisAgent")
-    test_query = "해당 기업의 뉴스가 주식시장에 미치는 영향 분석"
     initial_state: GraphState = {"company_name": "LG화학"}
     final_state = agent.process(initial_state)
     print("\n=== 뉴스 분석 결과 ===")
-    print(final_state.get("news_analysis", "결과 없음"))
+    print(final_state.get("news_report", "결과 없음"))
