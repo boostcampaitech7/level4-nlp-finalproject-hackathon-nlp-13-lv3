@@ -42,14 +42,31 @@ class ReportSupervisorAgent(Node):
             {integrated_report}
             --------------------------------------------------
 
-            위 보고서를 검토한 결과, 아래 5개 영역 중 어느 부분이 부족한지와 그 근거를 도출해 주세요.
-            - financial_report (증권리포트 기반 기업 분석 보고서)
-            - news_report (뉴스 분석 보고서)
-            - macro_report (거시경제 분석 보고서)
-            - fin_statements_report (재무제표 분석 보고서)
-            - daily_chart_report (호가창/차트 분석 보고서)
+            위 보고서를 검토한 결과, 아래 각 영역에서 반드시 포함되어야 할 내용이 있습니다.
 
-            부족한 부분과 그 이유를 JSON 형식으로 반환해 주세요. 만약 모든 영역이 충분하다면, deficient_area는 "ok"로 응답하십시오.
+            1. [financial_report]:
+            - 기업의 비즈니스 모델, 핵심 사업, 경쟁력, 성장 전략, 주요 위험 요인 및 투자 의견의 근거가 구체적으로 서술되어야 합니다.
+            2. [news_report]:
+            - 최신 뉴스 이벤트, 발행일 정보, 시계열 변화 및 그에 따른 시사점, 그리고 뉴스가 주가에 미치는 영향이 상세히 분석되어야 합니다.
+            3. [macro_report]:
+            - 주요 거시경제 지표(예: 환율, 금리 등)의 구체적인 수치와 추세, 해당 지표가 기업에 미치는 영향이 명확히 언급되어야 합니다.
+            4. [fin_statements_report]:
+            - 주요 재무 비율(예: ROE, ROA, 부채비율 등)과 과거 추세 비교, 재무 건전성 평가가 포함되어야 합니다.
+            5. [daily_chart_report]:
+            - 주요 기술적 지표(예: 지지선, 저항선, 거래량, RSI, MACD 등)와 가격 전망, 추천 매매 전략이 구체적으로 제시되어야 합니다.
+
+            부족한 영역과 그 이유를 아래 JSON 형식으로 반환해 주세요. 
+            예를 들어, 기업 분석 내용이 부족하면:
+            ```json
+            {
+            "deficient_area": "financial_report",
+            "reasons": "기업의 핵심 사업 및 경쟁력 분석이 충분하지 않습니다."
+            }
+            모든 영역이 충분하다면:
+            {
+            "deficient_area": "ok",
+            "reasons": "모든 영역이 충분합니다."
+            }
             """
         )
         self.diagnosis_chain = self.diagnosis_prompt | self.llm
@@ -83,8 +100,12 @@ class ReportSupervisorAgent(Node):
             state["next"] = "FinalAnalysisAgent"
             return state
 
+        # 재시도 시마다 추가 문구를 붙여 LLM에 변화를 유도
+        prompt_suffix = f"\n\n(추가 시도 #{retry_count + 1}: 이전 결과와 동일할 경우, 새로운 관점을 포함해 주세요.)"
+        modified_report = integrated_report + prompt_suffix
+
         diagnosis_response = self.diagnosis_chain.invoke({
-            "integrated_report": integrated_report
+            "integrated_report": modified_report
         })
         diagnosis_text = diagnosis_response.content if hasattr(diagnosis_response, "content") else diagnosis_response
         diagnosis_text = diagnosis_text.strip()
@@ -98,7 +119,7 @@ class ReportSupervisorAgent(Node):
             print(f"[{self.name}] 진단 결과 JSON 파싱 실패: {e}")
             deficient_area = "final"
             reasons = "진단 결과를 파싱할 수 없습니다."
-
+            
         # 저장: 부족한 영역과 이유를 state에 기록
         state["deficiency_details"] = reasons
 
