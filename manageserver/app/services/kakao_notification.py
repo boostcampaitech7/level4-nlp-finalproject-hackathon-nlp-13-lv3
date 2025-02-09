@@ -78,3 +78,30 @@ class KakaoNotification:
             return f"✅ 거래 ID {trade_id} 요청이 성공적으로 전송되었습니다."
         return f"❌ 거래 ID {trade_id} 요청 실패: {response.text}"
 
+
+    def handle_rejection(self, user_id, investor_type, company_code):
+    """ 사용자가 거래를 거부했을 때 카카오톡 API로 메시지 전송 """
+    access_token, _ = self.db.get_tokens(user_id)
+    
+    if not access_token:
+        return {"error": "❌ 사용자 액세스 토큰 없음"}
+
+    rejection_message = {
+        "object_type": "text",
+        "text": f"🚫 [거래 거부 알림]\n투자자 유형: {investor_type}\n기업 코드: {company_code}\n해당 거래가 거부되었습니다.",
+        "link": {"web_url": "https://www.example.com"}
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    data = {"template_object": json.dumps(rejection_message, ensure_ascii=False)}
+
+    print(f"🔍 [DEBUG] 카카오톡 거부 메시지 요청 데이터: {data}")
+    response = requests.post(self.kakao_api_url, headers=headers, data=data)
+
+    print(f"🔍 [DEBUG] 카카오톡 API 응답 코드: {response.status_code}")
+    print(f"🔍 [DEBUG] 카카오톡 API 응답 내용: {response.text}")
+
+    return response

@@ -42,9 +42,9 @@ class FinancialReportsAnalysisAgent(Node):
         self.final_answer_chain = self.final_prompt_template | self.llm
 
     def call_financial_api(self, query: str) -> str:
-        api_url = os.getenv("FINANCIAL_API_URL", "http://localhost:8000/api/query")
+        api_url = os.getenv("FINANCIAL_API_URL", "http://10.28.224.32:30800/api/query")
         try:
-            response = requests.post(api_url, json={"query": query}, timeout=25)
+            response = requests.post(api_url, json={"query": query}, timeout=300)
             response.raise_for_status()
             result = response.json()
             return result.get("answer", "답변이 존재하지 않습니다.")

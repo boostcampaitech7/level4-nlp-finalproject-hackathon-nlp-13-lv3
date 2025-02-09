@@ -19,8 +19,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from elasticsearch import Elasticsearch
 from pydantic import BaseModel, Field, PrivateAttr
 from openai import OpenAI
-
 from fastapi.middleware.cors import CORSMiddleware
+
 # Load environment variables
 load_dotenv()
 
@@ -312,9 +312,6 @@ class RAGSystem:
             logger.error(f"Groundedness check error (JSON parsing): {str(e)}")
             return (False, 0, "Error during evaluation")
 
-
-# Initialize RAG system
-
     def rewrite_query(self, original_query: str, previous_answer: str, groundedness_explanation: str) -> str:
         """
         이전 답변에서 누락된 정보만 찾도록 질문 재작성
@@ -347,12 +344,12 @@ class RAGSystem:
                     - Faiss와 ElasticSearch 검색을 위한 정확한 키워드 사용
                     - 불필요한 조사나 문장 종결어미 제거
 
-                    3. 누락 정보 초점:
-                    - 이미 얻은 정보는 반드시 제외
-                    - 평가 결과에서 지적된 부족한 정보에 집중
+                    3. (중요) 누락 정보 초점:
+                    - 이미 얻은 정보의 키워드는 반드시 제외
+                    - 평가 결과에서 지적된 부족한 정보에만 집중
 
                     4. 간결성:
-                    - 3-6개의 핵심 키워드로 구성
+                    - 2-6개의 핵심 키워드로 구성
                     - 키워드는 공백으로 구분
 
                     - 예시 1)
@@ -362,10 +359,10 @@ class RAGSystem:
                     재작성 쿼리: 삼성전자 1Q24E 실적전망 매출액 증권사
 
                     - 예시 2)
-                    원래 질문: LG화학 분기별 영업이익 추이가 궁금해요.
-                    현재 답변: 3Q23 영업이익만 알려드렸습니다.
-                    부족한 점: 다른 분기 정보 누락
-                    재작성 쿼리: LG화학 1Q23 2Q23 4Q23E QoQ
+                    원래 질문: LG화학과 네이버의 2024년도 분기별 영업이익 추이가 궁금해요.
+                    현재 답변: 네이버의 영업이익만 알려드렸습니다.
+                    부족한 점: LG화학 정보 누락
+                    재작성 쿼리: LG화학 1Q24 2Q24 3Q24 4Q23E QoQ -> 네이버는 제외
                     
                     - 금융 용어 참고:
                         - 1Q23, 2Q23 → 23년 1분기, 2분기
@@ -376,7 +373,8 @@ class RAGSystem:
                         - YTD → 연초부터 현재까지
 
                     예시와 금융 용어를 참고해서 위 지침을 단계적으로 수행하고 새로운 검색 쿼리를 작성해주세요.
-                    결과는 핵심 키워드들을 공백으로 구분하여 제시하세요. 
+                    결과는 핵심 키워드들을 공백으로 구분하여 제시하세요.
+                    이 모든 과정을 단계적으로 수행해주세요. 
                     """
 
             # PromptTemplate 사용하여 프롬프트 생성
@@ -388,7 +386,7 @@ class RAGSystem:
 
             # ChatOpenAI 모델 인스턴스 생성 (낮은 temperature 사용)
             llm = ChatOpenAI(
-                temperature=0.1,
+                temperature=0.3,
                 model="gpt-4o-mini"
             )
 
@@ -409,6 +407,7 @@ class RAGSystem:
                             2. ElasticSearch: 키워드 기반 정확도 검색 (15개 문서 선별)
                             3. Reranker: 최종 관련성 기반 재정렬
                             """
+                            
             # LangChain 메시지 객체 사용
             messages = [
                 SystemMessage(content=system_template),
@@ -456,9 +455,9 @@ class RAGSystem:
                 - 질문 의도에 부합하는 정도 평가
                 
                 4. 수치 데이터를 검증하세요:
-                - 모든 수치는 원본 단위 그대로 유지 (예: 2,373십억원 → 2,373십억원)
-                - 단위 변환 금지
-                - 숫자와 단위가 정확히 일치하는지 확인
+                - 모든 수치는 원본 단위 그대로 유지 (옳은 예시: 2,373십억원 → 2,373십억원, 옳지 못한 예시: 2,373십억원 -> 2,373억원)
+                - 올바르지 못한 단위 변환 금지
+                - 숫자와 단위가 Contexts와 정확히 일치하는지 확인
                 
                 5. 다음 구조로 통합된 답변을 작성하세요:
                 - 질문에 대한 직접적인 답변 먼저 제시
@@ -600,10 +599,12 @@ async def process_query(query_input: QueryInput):
         logger.info(result)
         return QueryOutput(**result)
     except Exception as e:
-        logger.debug(e)
+        logger.exception(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 # 8. 서버 실행
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=30800)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
