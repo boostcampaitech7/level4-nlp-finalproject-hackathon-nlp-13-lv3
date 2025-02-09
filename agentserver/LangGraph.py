@@ -100,7 +100,8 @@ def main():
 
     print("\n===== 최종 보고서 =====")
     # 최종 보고서는 FinalAnalysisAgent 또는 EndNode에서 생성된 state에 있음
-    print(final_state.get("final_report", final_state.get("integrated_report", "최종 보고서가 생성되지 않았습니다.")))
+    print(final_state.get("final_report", "최종 보고서가 생성되지 않았습니다."))
+    print(final_state.get("integrated_report", "최종 통합보고서가 생성되지 않았습니다."))
 
 if __name__ == "__main__":
     main()
