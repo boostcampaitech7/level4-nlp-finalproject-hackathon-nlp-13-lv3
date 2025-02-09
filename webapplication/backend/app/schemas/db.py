@@ -145,8 +145,8 @@ class Task(SQLModel, table=True):
         default=None,
         sa_column=Column(String, nullable=True)
     )
-    # company_name: 기업명 (varchar, NULL 허용)
-    company_name: Optional[str] = Field(
+    # stock_name: 기업명 (varchar, NULL 허용)
+    stock_name: Optional[str] = Field(
         default=None,
         sa_column=Column(String, nullable=True)
     )
