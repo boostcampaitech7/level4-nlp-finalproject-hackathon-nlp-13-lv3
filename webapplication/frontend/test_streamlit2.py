@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime
 import base64
 import streamlit.components.v1 as components
+
+from auth import set_google_login_btn
 # ------------------------------
 # 전역 변수 및 함수 정의
 # ------------------------------
@@ -115,17 +117,18 @@ def common_sidebar():
 def login_page():
     st.title("nlp13조에 오신걸 환영합니다")
     st.subheader("Please Login")
-    if st.button("Login"):
-        st.session_state.logged_in = True
-        st.query_params.login_status = "login"
-        # 로그인 시 기본 페이지를 Dashboard로 설정
-        st.session_state.page = "dashboard"
-        # 초기 보고서 저장용 DataFrame 생성 (만약 아직 없으면)
-        if 'reports' not in st.session_state:
-            st.session_state.reports = pd.DataFrame(
-                columns=['Date', 'Company', 'Investor Type', 'Report']
-            )
-        st.rerun()
+    st.write(set_google_login_btn(), unsafe_allow_html=True)
+    # if st.button("Login"):
+    #     st.session_state.logged_in = True
+    #     st.query_params.login_status = "login"
+    #     # 로그인 시 기본 페이지를 Dashboard로 설정
+    #     st.session_state.page = "dashboard"
+    #     # 초기 보고서 저장용 DataFrame 생성 (만약 아직 없으면)
+    #     if 'reports' not in st.session_state:
+    #         st.session_state.reports = pd.DataFrame(
+    #             columns=['Date', 'Company', 'Investor Type', 'Report']
+    #         )
+    #     st.rerun()
 
 
 def sidebar_logout_button():
@@ -164,7 +167,7 @@ def sidebar_logout_button():
     if "login_status" in params and params["login_status"][0].lower() == "logout":
         st.session_state.logged_in = False
         st.session_state.page = "login"
-        # st.query_params  # 쿼리 파라미터 초기화
+        st.query_params.clear()  # 쿼리 파라미터 초기화
         st.session_state.clear()
         st.rerun()
 
@@ -376,12 +379,23 @@ def report_view_page():
 
 
 def main():
+
     # 세션 상태 초기화
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
-    if 'page' not in st.session_state:
+    if 'page' not in st.session_state or st.query_params.get("login_status") == "logout":
         st.session_state.page = "login"
 
+    if st.query_params.get("login_status") == "login" and st.query_params.get("user_id") is not None:
+        st.session_state.logged_in = True
+        if st.session_state.page == "login":
+            st.session_state.page = "dashboard"
+        # 초기 보고서 저장용 DataFrame 생성 (만약 아직 없으면)
+        if 'reports' not in st.session_state:
+            st.session_state.reports = pd.DataFrame(
+                columns=['Date', 'Company', 'Investor Type', 'Report']
+            )
+    print("main:", st.session_state.page)
     if not st.session_state.logged_in or st.session_state.page == "login":
         # 로그인 페이지는 사이드바 없이 표시
         login_page()
@@ -396,7 +410,7 @@ def main():
             st.query_params.page = "create_report"
             create_report_page()
         elif st.session_state.page == "investor_analysis":
-            st.query_params.page = "analysis"
+            st.query_params.page = "investor_analysis"
             investor_analysis_page()
         elif st.session_state.page == "report_view":
             st.query_params.page = "report_view"
