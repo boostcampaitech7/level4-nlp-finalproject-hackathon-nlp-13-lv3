@@ -1,8 +1,12 @@
 from sqlmodel import SQLModel, Session, create_engine
 from app.config import settings
+
+from contextlib import contextmanager
+
 # from sqlalchemy.ext.declarative import declarative_base
 # from sqlacodegen.codegen import CodeGenerator
 DATABASE_URL = settings.database_url
+
 
 # SQLite를 사용할 경우 추가적인 연결 옵션 설정
 connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
@@ -10,6 +14,16 @@ connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 # 엔진 생성 (debug 모드 시 SQL 로깅을 활성화할 수 있음)
 engine = create_engine(DATABASE_URL, echo=settings.debug,
                        connect_args=connect_args)
+
+
+@contextmanager
+def get_db_session():
+    """일반 스크립트에서 사용할 수 있는 세션 컨텍스트 매니저."""
+    session = Session(engine)
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 def get_db():
