@@ -52,23 +52,13 @@ class FinancialReportsAnalysisAgent(Node):
             return f"API 호출 중 오류 발생: {e}"
 
     def process(self, state: GraphState) -> GraphState:
-        """
-        LangGraph에서 호출되는 메인 함수.
-        state에서 "company_name"과 "financial_query"를 읽어 쿼리를 구성하고 LLM 분석을 실행한 후,
-        결과를 state["financial_report"]에 저장합니다.
-        """
+        ## 기업명 state: company_name 입력 -> LLM으로 query 생성 -> query 입력  
         print(f"[{self.name}] process() 호출")
-        
-        # 회사명 필수 입력 확인
-        company = state.get("company_name", "")
-        if not company:
-            state["financial_report"] = "회사명이 제공되지 않았습니다."
+        query = state.get("financial_query", "")
+        if not query:
+            state["financial_report"] = "재무 분석 쿼리가 없습니다."
             return state
         
-        # financial_query가 있으면 사용, 없으면 기본 쿼리 생성
-        query = state.get("financial_query", f"{company}의 최신 증권 리포트를 분석하여 투자 전략 및 매매의견을 제시해 주세요.")
-        
-        # API 호출 및 LLM 분석
         api_context = self.call_financial_api(query)
         final_answer = self.final_answer_chain.invoke({"context": api_context, "question": query})
         state["financial_report"] = final_answer.content
@@ -77,11 +67,10 @@ class FinancialReportsAnalysisAgent(Node):
 
 if __name__ == "__main__":
     agent = FinancialReportsAnalysisAgent("FinancialReportsAnalysisAgent")
-    test_query = "LG화학의 증권 리포트를 기반으로 한 투자 전망 및 매매의견 분석"
-    initial_state: GraphState = {
-        "company_name": "LG화학",
-        "financial_query": test_query
-    }
+    test_query = " 전문가에 대한 기업 분석 의견...  정보성 있을지 "
+    initial_state: GraphState = {"financial_query": test_query}
     final_state = agent.process(initial_state)
     print("\n=== 분석 결과 ===")
     print(final_state.get("financial_report", "결과 없음"))
+
+## query 입력 수정 필요 [ ]
