@@ -181,12 +181,13 @@ def main():
 
             }
             response = requests.post(
-                "http://10.28.224.49:8000/trade", data=request_data)
+                f"{MANAGER_API_URL}/trade", data=request_data)
 
             print(response.text)
 
         except Exception as e:
             print(f"Error: {e}")
+            db.rollback()
             db.query(Task).filter(Task.task_id == tasks.task_id).update(
                 {Task.status: "실패", Task.status_message: str(e)})
             db.commit()
