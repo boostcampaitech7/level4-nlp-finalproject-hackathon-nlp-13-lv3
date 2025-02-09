@@ -1,22 +1,38 @@
 import os
-import sqlite3
+import psycopg2
+from psycopg2 import OperationalError
+from dotenv import load_dotenv
 
+# ✅ `.env` 파일 경로 명시적으로 지정하여 로드
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", "config", ".env")
+load_dotenv(dotenv_path)
 
 class Database:
-    """
-    SQLite 데이터베이스를 관리하는 클래스.
-    사용자별 액세스 토큰 및 리프레시 토큰을 저장하고 조회할 수 있음.
-    """
-
+    """PostgreSQL 데이터베이스 관리"""
     def __init__(self):
-        """ 데이터베이스 초기화 및 연결 """
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.db_path = os.path.join(base_dir, "tokens.db")
+        self.conn_params = {
+            "dbname": os.getenv("DB_NAME"),
+            "user": os.getenv("DB_USER"),
+            "password": os.getenv("DB_PASSWORD"),
+            "host": os.getenv("DB_HOST", "localhost"),
+            "port": os.getenv("DB_PORT", 5432)
+        }
+
+        # 🔍 환경변수 정상 로드 확인 (디버깅용)
+        print(f"🔍 [DEBUG] DB 설정 확인: {self.conn_params}")
+
+        # ✅ PostgreSQL 연결 가능 여부 테스트
+        try:
+            self.get_connection()
+        except OperationalError as e:
+            print(f"❌ [ERROR] PostgreSQL 연결 실패: {e}")
+            exit(1)  # 오류 발생 시 프로그램 종료
+
         self._init_db()
 
     def _init_db(self):
-        """ 데이터베이스 테이블 생성 (없으면 자동 생성) """
-        conn = sqlite3.connect(self.db_path)
+        """ 테이블이 없으면 생성 """
+        conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_tokens (
@@ -25,70 +41,97 @@ class Database:
                 refresh_token TEXT
             )
         """)
-        conn.commit()
-        conn.close()
-
-    def save_tokens(self, user_id: str, access_token: str, refresh_token: str):
-        """
-        사용자별 액세스 토큰 및 리프레시 토큰 저장
-        - 기존 유저가 있으면 업데이트, 없으면 새로 삽입
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_tokens (user_id, access_token, refresh_token)
-            VALUES (?, ?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET
-            access_token = excluded.access_token,
-            refresh_token = excluded.refresh_token
-        """, (user_id, access_token, refresh_token))
+            CREATE TABLE IF NOT EXISTS trade_requests (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT,
+                stock_code TEXT,
+                position TEXT,
+                justification TEXT,
+                status TEXT DEFAULT 'pending'
+            )
+        """)
         conn.commit()
+        cursor.close()
         conn.close()
 
-    def get_tokens(self, user_id: str):
-        """
-        특정 사용자의 액세스 토큰 및 리프레시 토큰 조회
-        - 존재하지 않으면 (None, None) 반환
-        """
-        conn = sqlite3.connect(self.db_path)
+    def get_connection(self):
+        """ PostgreSQL DB 연결 반환 (예외 처리 포함) """
+        try:
+            conn = psycopg2.connect(**self.conn_params)
+            return conn
+        except OperationalError as e:
+            print(f"❌ [ERROR] PostgreSQL 연결 실패: {e}")
+            return None  # 오류 발생 시 None 반환
+
+    def get_tokens(self, user_id):
+        """ 특정 사용자의 액세스 토큰 및 리프레시 토큰 조회 """
+        conn = self.get_connection()
+        if conn is None:
+            return None, None
+
         cursor = conn.cursor()
-        cursor.execute("SELECT access_token, refresh_token FROM user_tokens WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT access_token, refresh_token FROM user_tokens WHERE user_id = %s", (user_id,))
         row = cursor.fetchone()
+        cursor.close()
         conn.close()
         return row if row else (None, None)
 
-    def delete_tokens(self, user_id: str):
-        """
-        특정 사용자의 토큰 정보 삭제
-        """
-        conn = sqlite3.connect(self.db_path)
+    def save_tokens(self, user_id, access_token, refresh_token):
+        """ 사용자 액세스 토큰 저장 (중복 시 업데이트) """
+        conn = self.get_connection()
+        if conn is None:
+            return
+
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM user_tokens WHERE user_id = ?", (user_id,))
+        cursor.execute("""
+            INSERT INTO user_tokens (user_id, access_token, refresh_token) 
+            VALUES (%s, %s, %s) 
+            ON CONFLICT (user_id) DO UPDATE SET 
+            access_token = EXCLUDED.access_token, 
+            refresh_token = EXCLUDED.refresh_token
+        """, (user_id, access_token, refresh_token))
         conn.commit()
+        cursor.close()
         conn.close()
 
-    def list_all_users(self):
-        """
-        저장된 모든 사용자 ID 조회 (디버깅용)
-        """
-        conn = sqlite3.connect(self.db_path)
+    def get_trade_request(self, trade_id):
+        """ trade_id를 기준으로 거래 요청 정보 조회 """
+        query = "SELECT user_id, stock_code, position, justification FROM trade_requests WHERE id = %s"
+        conn = self.get_connection()
+        if conn is None:
+            return None
+
+        with conn.cursor() as cur:
+            cur.execute(query, (trade_id,))
+            return cur.fetchone()
+
+    def get_interested_stocks(self):
+        """ 관심 종목 목록 조회 """
+        query = "SELECT user_id, stock_code FROM interested_stocks"
+        conn = self.get_connection()
+        if conn is None:
+            return []
+
+        with conn.cursor() as cur:
+            cur.execute(query)
+            return cur.fetchall()
+
+    def save_trade_request(self, user_id, stock_code, position, justification):
+        """ 거래 요청을 DB에 저장하고 trade_id 반환 """
+        conn = self.get_connection()
+        if conn is None:
+            return None
+
         cursor = conn.cursor()
-        cursor.execute("SELECT user_id FROM user_tokens")
-        users = cursor.fetchall()
+        cursor.execute("""
+            INSERT INTO trade_requests (user_id, stock_code, position, justification, status) 
+            VALUES (%s, %s, %s, %s, 'pending') RETURNING id
+        """, (user_id, stock_code, position, justification))
+
+        trade_id = cursor.fetchone()[0]  # 생성된 trade_id 가져오기
+        conn.commit()
+        cursor.close()
         conn.close()
-        return [user[0] for user in users]
 
-
-# ✅ 디버깅 테스트 코드 (직접 실행 시 동작)
-if __name__ == "__main__":
-    db = Database()
-    db.save_tokens("test_user", "sample_access_token", "sample_refresh_token")
-    print("토큰 저장 완료!")
-
-    tokens = db.get_tokens("test_user")
-    print(f"test_user의 토큰 조회: {tokens}")
-
-    db.delete_tokens("test_user")
-    print("test_user 토큰 삭제 완료!")
-
-    print(f"모든 사용자 조회: {db.list_all_users()}")
+        return trade_id
