@@ -214,7 +214,7 @@ def sidebar_top_buttons():
 
 
 def common_sidebar():
-    st.sidebar.markdown("# AI 에이전트를 활용한 주식 매매 시스템")
+    st.sidebar.markdown("# AI 주식 매매 관리 시스템")
     nav_option = st.sidebar.radio(
         "페이지 선택", ["Dashboard", "Create Report"],
         index=0 if st.session_state.page in ["dashboard"] else 1
@@ -244,7 +244,10 @@ def common_sidebar():
 
 
 def login_page():
-    st.title("nlp13조에 오신걸 환영합니다")
+    st.title("nlp요리사 팀의")
+    st.title("AI 주식 매매 관리 시스템")
+    st.subheader(" ")
+    st.subheader(" ")
     st.subheader("Please Login")
     st.write(set_google_login_btn(), unsafe_allow_html=True)
     # if st.button("Login"):
