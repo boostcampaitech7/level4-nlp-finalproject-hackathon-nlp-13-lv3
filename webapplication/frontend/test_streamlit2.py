@@ -202,29 +202,70 @@ def sidebar_logout_button():
 def dashboard_page():
     st.title("Dashboard - 보고서 열람")
     # 만약 보고서가 없으면 안내 메시지
-    if st.session_state.reports.empty:
-        st.info("생성된 보고서가 없습니다.")
-    else:
-        # 선택된 기업으로 필터링 (선택되지 않았으면 전체 보고서)
-        if 'selected_company' in st.session_state:
-            filtered_reports = st.session_state.reports[
-                st.session_state.reports['Company'] == st.session_state.selected_company
-            ]
-        else:
-            filtered_reports = st.session_state.reports
+
+    selected_company = st.session_state.selected_company if 'selected_company' in st.session_state else companies[
+        0]
+    stock_code = get_stock_code(selected_company)
+    resp = req.get_report_logs(st.query_params.user_id, stock_code)
+    print(resp)
+    if resp.status_code == 200:
+        print("보고서 로그 조회 성공")
+        results = resp.json()
+        print(resp.json())
+        report_logs = results['report_logs']
+        st.session_state.reports = pd.DataFrame(report_logs)
+        filtered_reports = st.session_state.reports
         if filtered_reports.empty:
-            st.info("선택된 기업에 생성된 보고서가 없습니다.")
+            st.info("생성된 보고서가 없습니다.")
         else:
-            st.dataframe(
-                filtered_reports[['Date', 'Company', 'Investor Type']])
-            selected_date = st.selectbox(
-                "열람할 보고서를 선택하세요", filtered_reports['Date'])
-            if selected_date:
-                report_content = filtered_reports[filtered_reports['Date']
-                                                  == selected_date]['Report'].values[0]
+            options = {}
+            for _, row in filtered_reports.iterrows():
+                display_str = f"{row['created_at']} {row['stock_name']}"
+                options[display_str] = row['task_id']
+
+            # selectbox에서 출력 문자열 선택
+            selected_display = st.selectbox(
+                "열람할 보고서를 선택하세요", list(options.keys()))
+
+            # 선택한 옵션에 해당하는 task_id 가져오기
+            selected_task_id = options[selected_display]
+            if selected_task_id:
+                report_content = filtered_reports[filtered_reports['task_id']
+                                                  == selected_task_id]['report_generate'].values[0]
                 st.text_area("보고서 내용", report_content, height=400)
-        st.markdown(get_table_download_link(
-            st.session_state.reports), unsafe_allow_html=True)
+
+            # st.dataframe(
+            #     filtered_reports[['Date', 'Company', 'Investor Type']])
+            # selected_date = st.selectbox(
+            #     "열람할 보고서를 선택하세요", filtered_reports['created_at'] + ' ' + filtered_reports['stock_name'])
+            # if selected_date:
+            #     report_content = filtered_reports[filtered_reports['Date']
+            #                                       == selected_date]['Report'].values[0]
+            #     st.text_area("보고서 내용", report_content, height=400)
+
+    # if st.session_state.reports.empty:
+    #     st.info("생성된 보고서가 없습니다.")
+    # else:
+    #     # 선택된 기업으로 필터링 (선택되지 않았으면 전체 보고서)
+    #     if 'selected_company' in st.session_state:
+    #         filtered_reports = st.session_state.reports[
+    #             st.session_state.reports['Company'] == st.session_state.selected_company
+    #         ]
+    #     else:
+    #         filtered_reports = st.session_state.reports
+    #     if filtered_reports.empty:
+    #         st.info("선택된 기업에 생성된 보고서가 없습니다.")
+    #     else:
+    #         st.dataframe(
+    #             filtered_reports[['Date', 'Company', 'Investor Type']])
+    #         selected_date = st.selectbox(
+    #             "열람할 보고서를 선택하세요", filtered_reports['Date'])
+    #         if selected_date:
+    #             report_content = filtered_reports[filtered_reports['Date']
+    #                                               == selected_date]['Report'].values[0]
+    #             st.text_area("보고서 내용", report_content, height=400)
+    #     st.markdown(get_table_download_link(
+    #         st.session_state.reports), unsafe_allow_html=True)
 
 # 3. Create a Report 페이지 (투자 보고서 생성을 위한 첫 화면)
 

@@ -31,3 +31,14 @@ def get_report(task_id: str, user_id: str):
 
     response = requests.get(url, params=params)
     return response.json()
+
+
+def get_report_logs(user_id: str, stock_code: str):
+    url = BACKEND_URL + f"/api/v1/invest/report_logs"
+    params = {
+        "user_id": str(user_id),
+        "stock_code": stock_code
+    }
+
+    response = requests.get(url, params=params)
+    return response
