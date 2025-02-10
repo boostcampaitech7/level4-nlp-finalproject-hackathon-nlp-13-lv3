@@ -3,16 +3,19 @@ import psycopg2
 from psycopg2 import OperationalError
 from dotenv import load_dotenv
 
-# ✅ `.env` 파일 자동 탐색 후 로드
+# `.env` 파일 자동 탐색 후 로드
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 dotenv_path = os.path.join(BASE_DIR, "..", "config", ".env")
 load_dotenv(dotenv_path)
 
 
 class Database:
-    """PostgreSQL 데이터베이스 관리"""
+    """PostgreSQL 데이터베이스 관리 클래스"""
 
     def __init__(self):
+        """
+        데이터베이스 연결 설정 및 테이블 초기화
+        """
         self.conn_params = {
             "dbname": os.getenv("DB_NAME"),
             "user": os.getenv("DB_USER"),
@@ -21,34 +24,34 @@ class Database:
             "port": os.getenv("DB_PORT", "5432")  # 기본값 5432 설정
         }
 
-        # 🔍 환경변수 정상 로드 확인 (디버깅)
-        print(f"🔍 [DEBUG] DB 설정 확인: {self.conn_params}")
-
-        # ✅ PostgreSQL 연결 테스트
+        # PostgreSQL 연결 테스트
         try:
             conn = self.get_connection()
             if conn is not None:
-                print("✅ [INFO] PostgreSQL 연결 성공")
                 conn.close()
         except OperationalError as e:
-            print(f"❌ [ERROR] PostgreSQL 연결 실패: {e}")
-            exit(1)  # 연결 실패 시 프로그램 종료
+            raise RuntimeError(f"PostgreSQL 연결 실패: {e}")
 
         self._init_db()
 
     def get_connection(self):
-        """ PostgreSQL DB 연결 반환 (예외 처리 포함) """
+        """
+        PostgreSQL 데이터베이스 연결 반환
+
+        Returns:
+            psycopg2.connection: DB 연결 객체 (연결 실패 시 None 반환)
+        """
         try:
             return psycopg2.connect(**self.conn_params)
         except OperationalError as e:
-            print(f"❌ [ERROR] PostgreSQL 연결 실패: {e}")
-            return None  # 연결 실패 시 None 반환
+            return None
 
     def _init_db(self):
-        """DB에 필요한 테이블 생성"""
+        """
+        필요한 테이블을 생성 (없을 경우에만 생성)
+        """
         conn = self.get_connection()
         if conn is None:
-            print("❌ [ERROR] DB 연결 실패로 테이블 생성 불가")
             return
 
         try:
@@ -67,20 +70,31 @@ class Database:
                         stock_code TEXT,
                         position TEXT,
                         justification TEXT,
-                        task_id TEXT,  
+                        task_id TEXT,
                         status TEXT DEFAULT 'pending'
                     )
                 """)
                 conn.commit()
-                print("✅ [INFO] 테이블 초기화 완료")
         except Exception as e:
-            print(f"❌ [ERROR] 테이블 생성 중 오류 발생: {e}")
             conn.rollback()
+            raise RuntimeError(f"테이블 생성 중 오류 발생: {e}")
         finally:
             conn.close()
 
-    def save_trade_request(self, user_id, stock_code, position, justification, task_id):
-        """거래 요청을 DB에 저장하고 trade_id 반환"""
+    def save_trade_request(self, user_id: str, stock_code: str, position: str, justification: str, task_id: str) -> int:
+        """
+        거래 요청을 데이터베이스에 저장하고 거래 ID 반환
+
+        Args:
+            user_id (str): 사용자 ID
+            stock_code (str): 종목 코드
+            position (str): 매수/매도 포지션
+            justification (str): 거래 근거
+            task_id (str): 작업 ID
+
+        Returns:
+            int: 생성된 거래 ID (저장 실패 시 None 반환)
+        """
         conn = self.get_connection()
         if conn is None:
             return None
@@ -92,19 +106,25 @@ class Database:
                     VALUES (%s, %s, %s, %s, %s, 'pending') RETURNING id
                 """, (user_id, stock_code, position, justification, task_id))
 
-                trade_id = cursor.fetchone()[0]  # 생성된 trade_id 가져오기
+                trade_id = cursor.fetchone()[0]  # 생성된 trade_id 반환
                 conn.commit()
-                print(f"✅ [INFO] 거래 요청 저장 완료 (trade_id: {trade_id})")
                 return trade_id
-        except Exception as e:
-            print(f"❌ [ERROR] 거래 요청 저장 중 오류 발생: {e}")
+        except Exception:
             conn.rollback()
             return None
         finally:
             conn.close()
 
-    def get_trade_request(self, trade_id):
-        """특정 거래 요청 정보 조회"""
+    def get_trade_request(self, trade_id: int):
+        """
+        특정 거래 요청 정보를 조회
+
+        Args:
+            trade_id (int): 거래 ID
+
+        Returns:
+            tuple: (user_id, stock_code, position, justification, task_id) (조회 실패 시 None 반환)
+        """
         query = "SELECT user_id, stock_code, position, justification, task_id FROM trade_requests WHERE id = %s"
         conn = self.get_connection()
         if conn is None:
@@ -113,20 +133,22 @@ class Database:
         try:
             with conn.cursor() as cur:
                 cur.execute(query, (trade_id,))
-                trade_data = cur.fetchone()
-                if trade_data:
-                    print(f"✅ [INFO] 거래 요청 조회 성공 (trade_id: {trade_id})")
-                else:
-                    print(f"⚠️ [WARNING] 거래 요청 없음 (trade_id: {trade_id})")
-                return trade_data
-        except Exception as e:
-            print(f"❌ [ERROR] 거래 요청 조회 중 오류 발생: {e}")
+                return cur.fetchone()
+        except Exception:
             return None
         finally:
             conn.close()
 
-    def get_tokens(self, user_id):
-        """특정 사용자의 액세스 토큰 및 리프레시 토큰 조회"""
+    def get_tokens(self, user_id: str):
+        """
+        특정 사용자의 액세스 토큰 및 리프레시 토큰을 조회
+
+        Args:
+            user_id (str): 사용자 ID
+
+        Returns:
+            tuple: (access_token, refresh_token) (조회 실패 시 (None, None) 반환)
+        """
         conn = self.get_connection()
         if conn is None:
             return None, None
@@ -134,23 +156,23 @@ class Database:
         try:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT access_token, refresh_token FROM user_tokens WHERE user_id = %s", (user_id,))
-                row = cursor.fetchone()
-                if row:
-                    print(f"✅ [INFO] 토큰 조회 성공 (user_id: {user_id})")
-                else:
-                    print(f"⚠️ [WARNING] 토큰 없음 (user_id: {user_id})")
-                return row if row else (None, None)
-        except Exception as e:
-            print(f"❌ [ERROR] 토큰 조회 중 오류 발생: {e}")
+                return cursor.fetchone() or (None, None)
+        except Exception:
             return None, None
         finally:
             conn.close()
 
-    def save_tokens(self, user_id, access_token, refresh_token):
-        """ 사용자의 액세스 토큰 저장 (중복 시 업데이트) """
+    def save_tokens(self, user_id: str, access_token: str, refresh_token: str):
+        """
+        사용자 액세스 토큰 저장 (기존 데이터가 있으면 업데이트)
+
+        Args:
+            user_id (str): 사용자 ID
+            access_token (str): 카카오톡 액세스 토큰
+            refresh_token (str): 카카오톡 리프레시 토큰
+        """
         conn = self.get_connection()
         if conn is None:
-            print("❌ [ERROR] DB 연결 실패로 토큰 저장 불가")
             return
 
         try:
@@ -163,9 +185,7 @@ class Database:
                     refresh_token = EXCLUDED.refresh_token
                 """, (user_id, access_token, refresh_token))
                 conn.commit()
-                print(f"✅ [INFO] 토큰 저장 완료 (user_id: {user_id}, access_token: {access_token[:10]}..., refresh_token: {refresh_token[:10]}...)")
-        except Exception as e:
-            print(f"❌ [ERROR] 토큰 저장 중 오류 발생: {e}")
+        except Exception:
             conn.rollback()
         finally:
             conn.close()
