@@ -159,6 +159,60 @@ def sidebar_chatbot_button():
     st.markdown(helper_chatbot_html, unsafe_allow_html=True)
 
 
+def sidebar_top_buttons():
+    # 실제 도우미 챗봇 URL로 대체
+
+    combined_html = f"""
+    <style>
+    /* 오른쪽 상단에 고정된 컨테이너 */
+    .fixed-top-right-buttons {{
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }}
+    /* 공통 버튼 스타일 */
+    .button-style {{
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-align: center;
+        font-weight: bold;
+        text-decoration: none;
+        cursor: pointer;
+        color: #ffffff !important;
+
+    }}
+    /* 로그아웃 버튼 스타일 */
+    .logout-btn {{
+        background-color: #f44336;
+        color: white;
+    }}
+    /* 도우미 챗봇 버튼 스타일 */
+    .chatbot-btn {{
+        background-color: #007BFF;
+        color: white;
+    }}
+    </style>
+    <div class="fixed-top-right-buttons">
+      <a href="?login_status=logout" class="button-style logout-btn">Log Out</a>
+      <a href="{CHATBOT_URL}" target="_blank" class="button-style chatbot-btn">도우미 챗봇</a>
+    </div>
+    """
+    st.markdown(combined_html, unsafe_allow_html=True)
+
+    params = st.query_params
+    if "login_status" in params and params["login_status"][0].lower() == "logout":
+        st.session_state.logged_in = False
+        st.session_state.page = "login"
+        st.query_params.clear()  # 쿼리 파라미터 초기화
+        st.session_state.clear()
+        st.rerun()
+
+
 def common_sidebar():
     st.sidebar.markdown("# AI 에이전트를 활용한 주식 매매 시스템")
     nav_option = st.sidebar.radio(
@@ -179,8 +233,9 @@ def common_sidebar():
     )
     st.session_state.selected_company = company
 
-    sidebar_logout_button()
-    sidebar_chatbot_button()
+    # sidebar_logout_button()
+    # sidebar_chatbot_button()
+    sidebar_top_buttons()
 # ------------------------------
 # 페이지 함수 정의
 # ------------------------------
@@ -211,11 +266,11 @@ def sidebar_logout_button():
     st.sidebar.markdown(
         """
         <style>
-        /* 컨테이너는 오른쪽 하단에 고정되고, 좌우 폭은 내용에 맞게 조정 */
+        /* 컨테이너는 오른쪽 상단에 고정되고, 좌우 폭은 내용에 맞게 조정 */
         .sidebar-logout-container {
             position: fixed;
-            bottom: 10px;
-            right: 10px;
+            top: 10px;  /* 화면 상단에서 10px 떨어지도록 설정 */
+            right: 10px; /* 오른쪽에서 10px 떨어지도록 설정 */
             z-index: 100;
         }
         /* 버튼은 인라인 블록으로 설정하여 내용에 맞게 크기가 결정됨 */
@@ -236,6 +291,7 @@ def sidebar_logout_button():
         """,
         unsafe_allow_html=True
     )
+
     # 쿼리 파라미터에 "logout"이 있으면 세션 상태 초기화 후 로그인 페이지로 전환
     params = st.query_params
     if "login_status" in params and params["login_status"][0].lower() == "logout":
