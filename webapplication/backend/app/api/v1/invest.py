@@ -32,7 +32,7 @@ async def create_a_report_task(report_request: TaskCreate, db: Session = Depends
     stock_name = stock.stock_name if stock else None
 
     task = Task(task_id=uuid.uuid4(), create_user_id=report_request.user_id, investor_type=report_request.investor_type,
-                stock_code=report_request.stock_code, stock_name=stock_name, created_at=now, status="시작 전")
+                stock_code=report_request.stock_code, stock_name=stock_name, created_at=now, status="시작 전", status_message="보고서 생성을 준비 중입니다. ")
     db.add(task)
     db.commit()
     db.refresh(task)
