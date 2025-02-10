@@ -121,4 +121,5 @@ For any other questions or discussion topics, please leave them in the GitHub Di
 ### Sponsors
 <a href="https://boostcamp.connect.or.kr/program_ai.html"><img src="docs/boostai_logo.png" alt="boostai_logo" width="250px"></a>
 
-본 프로젝트는 네이버커넥트재단 부스트캠프 AI Tech 7기 기업 해커톤 프로젝트입니다.
+본 프로젝트는 네이버커넥트재단 부스트캠프 AI Tech 7기 기업 해커톤 프로젝트입니다.<br>
+1달간 sprint 개발에 성실히 참여한 NLP-CHEF 팀 다시 한 번 수고 많으셨습니다.<br>
