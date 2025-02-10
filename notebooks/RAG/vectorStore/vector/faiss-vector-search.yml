@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  fastapi-faiss-app:
+    image: so1pi/faiss-vector-search:latest
+    container_name: fastapi_faiss_app
+    ports:
+      - "8060:5000"
+    volumes:
+      - ./faiss_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 2096M # 최대 512MB RAM 사용
+        reservations:
+          memory: 1024M # 최소 256MB RAM 예약
+    restart: unless-stopped
+## sudo chmod -R 775 ./faiss_data

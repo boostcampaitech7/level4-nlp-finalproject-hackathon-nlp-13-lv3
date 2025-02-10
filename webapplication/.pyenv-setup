@@ -1,0 +1,115 @@
+#!/bin/bash
+# ~/.setup_pyenv.sh
+# Ubuntu 22.04에서 pyenv, pyenv-virtualenv 설치 및 설정과
+# Python 3.10.0 기반 가상환경(myenv) 생성 및 활성화를 위한 스크립트
+
+set -e  # 오류 발생 시 스크립트 중단
+
+##############################################
+# 1. 필수 의존성 패키지 설치
+##############################################
+echo "APT 업데이트 및 필수 의존성 패키지 설치 중..."
+sudo apt update
+sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+    xz-utils tk-dev libffi-dev liblzma-dev python3-openssl git
+
+##############################################
+# 2. pyenv 설치
+##############################################
+if [ ! -d "$HOME/.pyenv" ]; then
+    echo "pyenv 설치 중..."
+    curl https://pyenv.run | bash
+else
+    echo "pyenv가 이미 설치되어 있습니다."
+fi
+
+##############################################
+# 3. pyenv 환경설정 (.bashrc에 추가)
+##############################################
+PYENV_CONFIG=$(cat << 'EOF'
+# ===== pyenv 설정 (자동 추가) =====
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+
+if command -v pyenv 1>/dev/null 2>&1; then
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+fi
+# ==================================
+EOF
+)
+
+if ! grep -q 'export PYENV_ROOT="$HOME/.pyenv"' ~/.bashrc; then
+    echo "pyenv 설정을 ~/.bashrc에 추가합니다..."
+    echo "$PYENV_CONFIG" >> ~/.bashrc
+else
+    echo "pyenv 설정이 이미 ~/.bashrc에 있습니다."
+fi
+
+##############################################
+# 4. pyenv-virtualenv 설치
+##############################################
+if [ ! -d "$(pyenv root)/plugins/pyenv-virtualenv" ]; then
+    echo "pyenv-virtualenv 설치 중..."
+    git clone https://github.com/pyenv/pyenv-virtualenv.git "$(pyenv root)/plugins/pyenv-virtualenv"
+else
+    echo "pyenv-virtualenv가 이미 설치되어 있습니다."
+fi
+
+##############################################
+# 5. pyenv-virtualenv 초기화 설정 (.bashrc에 추가)
+##############################################
+PYENV_VENV_CONFIG=$(cat << 'EOF'
+# ===== pyenv-virtualenv 설정 (자동 추가) =====
+if command -v pyenv 1>/dev/null 2>&1; then
+    eval "$(pyenv virtualenv-init -)"
+fi
+# ============================================
+EOF
+)
+
+if ! grep -q 'eval "$(pyenv virtualenv-init -)"' ~/.bashrc; then
+    echo "pyenv-virtualenv 설정을 ~/.bashrc에 추가합니다..."
+    echo "$PYENV_VENV_CONFIG" >> ~/.bashrc
+else
+    echo "pyenv-virtualenv 설정이 이미 ~/.bashrc에 있습니다."
+fi
+
+##############################################
+# 6. (선택 사항) 특정 Python 버전 설치 및 가상환경 생성/활성화
+##############################################
+# 사용하고자 하는 Python 버전과 가상환경 이름을 설정합니다.
+PYTHON_VERSION="3.11.9"
+VENV_NAME="nlp13-venv"
+
+# 지정한 Python 버전이 설치되어 있지 않으면 설치
+if ! pyenv versions --bare | grep -q "^${PYTHON_VERSION}$"; then
+    echo "Python ${PYTHON_VERSION} 설치 중..."
+    pyenv install ${PYTHON_VERSION}
+else
+    echo "Python ${PYTHON_VERSION}이 이미 설치되어 있습니다."
+fi
+
+# 가상환경이 존재하지 않으면 생성
+if ! pyenv virtualenvs --bare | grep -q "^${VENV_NAME}$"; then
+    echo "Python ${PYTHON_VERSION}을 기반으로 가상환경 '${VENV_NAME}' 생성 중..."
+    pyenv virtualenv ${PYTHON_VERSION} ${VENV_NAME}
+else
+    echo "가상환경 '${VENV_NAME}'이 이미 존재합니다."
+fi
+
+# 현재 셸 세션에서 가상환경 활성화
+echo "가상환경 '${VENV_NAME}' 활성화 중..."
+pyenv activate ${VENV_NAME}
+
+##############################################
+# 7. 마무리 안내 메시지
+##############################################
+echo "--------------------------------------------"
+echo "설정이 완료되었습니다."
+echo "추가된 설정을 적용하려면 터미널을 재시작하거나 다음 명령어를 실행하세요:"
+echo "    source ~/.bashrc"
+echo "※ 주의: 스크립트 내에서의 가상환경 활성화는 해당 스크립트 실행 중의 서브셸에서만 적용됩니다."
+echo "    프로젝트별로는 해당 디렉토리에서 'pyenv local ${VENV_NAME}'을 사용하세요."
+echo "--------------------------------------------"

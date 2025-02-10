@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  faiss-vector-app:
+    image: jilp1598sel/f-v-n13:latest
+    container_name: faiss-vector-app
+    ports:
+      - "8060:8060"
+    volumes:
+      - ./data:/app/data
+      - ./env:/app/env
+    environment:
+      - MODE=Production
+    deploy:
+      resources:
+        limits:
+          memory: 2096M # 최대 512MB RAM 사용
+        reservations:
+          memory: 1024M # 최소 256MB RAM 예약
+    restart: unless-stopped
+## sudo chmod -R 775 ./faiss_data

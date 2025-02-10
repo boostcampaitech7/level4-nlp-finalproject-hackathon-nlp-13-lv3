@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "aitech-nlp13-parser"
+version = "0.1.0"
+description = ""
+authors = ["hantaek <lht92229@gmail.com>"]
+readme = "README.md"
+
+packages = [
+    { include = "graphparser" },
+]
+
+[tool.poetry.dependencies]
+python = "3.11.9"
+langsmith = "^0.1.115"
+langgraph = "^0.2.19"
+pymupdf = "^1.24.10"
+python-dotenv = "^1.0.1"
+pillow = "^10.4.0"
+ipython = "^8.27.0"
+faiss-cpu = "^1.8.0.post1"
+beautifulsoup4 = "^4.12.3"
+markdownify = "^0.13.1"
+pdfplumber = "^0.11.4"
+langchain-teddynote = "^0.3.30"
+lxml = "^5.3.0"
+langchain-openai = "^0.3.0"
+langchain-community = "^0.3.14"
+chromadb = "^0.6.3"
+ipykernel = "^6.29.5"
+gradio = "^5.12.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
