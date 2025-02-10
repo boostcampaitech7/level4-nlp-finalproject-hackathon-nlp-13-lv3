@@ -24,7 +24,7 @@ import json
 
 from dotenv import load_dotenv
 
-MANAGER_API_URL = os.environ.get("MANAGER_URL")
+MANAGER_API_URL = os.environ.get("MANAGER_API_URL")
 load_dotenv()
 # StartNode 및 EndNode 정의
 START = "START"
@@ -148,6 +148,10 @@ def main():
             db.commit()
 
             final_state = None
+            # final_state = {
+            #     "final_report" : "최종 보고서가 들어갔다고 가정, 매수",
+            #     "integrated_report" : "통합 보고서가 들어갔다고 가정"
+            # }
             graph = create_graph()
             for node_name, state in graph.run_stream(initial_state):
                 print(
@@ -164,26 +168,31 @@ def main():
             if final_state.get("final_report") is not None and final_state.get("integrated_report") is not None:
                 stock_position = parse_stock_position(
                     final_state.get("final_report"))
-                db.query(Task).filter(Task.task_id == tasks.task_id).update(
-                    {Task.status: "완료", Task.report_generate: final_state.get("final_report") + "\n" + final_state.get("integrated_report"),
-                     Task.stock_position: stock_position, Task.stock_justification: final_state.get("integrated_report"), Task.modified_at: now})
+
+                integrated_report = final_state.get("integrated_report") or ""
+                final_report = final_state.get("final_report") or ""
+                total_report = final_report + " " + integrated_report
+
+                # db.query(Task).filter(Task.task_id == tasks.task_id).update({Task.status: "완료"})
+                db.query(Task).filter(Task.task_id == tasks.task_id).update({Task.status: "완료", Task.report_generate: total_report,
+                                                                             Task.stock_position: stock_position, Task.stock_justification: integrated_report, Task.modified_at: now})
                 db.commit()
             else:
                 raise Exception("최종 보고서 생성 실패")
 
-            request_data = {
-                "user_id": tasks.create_user_id,
-                "stock_code": tasks.stock_code,
-                "investor_type": tasks.investor_type,
-                "task_id": tasks.task_id,
-                "position": stock_position,
-                "justification": final_state.get("integrated_report"),
+            # request_data = {
+            #     "user_id": tasks.create_user_id,
+            #     "stock_code": tasks.stock_code,
+            #     "investor_type": tasks.investor_type,
+            #     "task_id": tasks.task_id,
+            #     "position": stock_position,
+            #     "justification": total_report,
 
-            }
-            response = requests.post(
-                f"{MANAGER_API_URL}/trade", data=request_data)
+            # }
+            # response = requests.post(
+            #     f"{MANAGER_API_URL}/trade", data=request_data)
 
-            print(response.text)
+            # print(response.text)
 
         except Exception as e:
             print(f"Error: {e}")
