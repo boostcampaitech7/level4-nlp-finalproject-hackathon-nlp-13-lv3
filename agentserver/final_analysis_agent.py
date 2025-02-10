@@ -18,6 +18,18 @@ from langchain_core.prompts import PromptTemplate
 from LangGraph_base import Node, GraphState
 
 class InvestmentEvaluation(BaseModel):
+    """
+    LLM의 투자 분석 결과를 구조화하는 Pydantic 모델입니다.
+
+    Attributes:
+        recommendation (Literal["매수", "매도", "관망"]): 투자 추천 방향
+        weights (str): 자본 배분 비율 제안
+            예: "사용 가능한 자본의 30% 매수"
+
+    Note:
+        JSON 형식의 LLM 응답을 파싱하고 검증하는데 사용됩니다.
+    """
+    
     recommendation: Literal["매수", "매도", "관망"] = Field(
         ..., description="주식 투자 추천 방향 (매수, 매도, 관망 중 하나)"
     )
@@ -26,6 +38,23 @@ class InvestmentEvaluation(BaseModel):
     )
 
 class FinalAnalysisAgent(Node):
+    """
+    모든 분석 결과를 종합하여 최종 투자 결정을 내리는 에이전트입니다.
+
+    통합 리포트를 분석하여 매수/매도/관망 결정과 함께
+    구체적인 자본 배분 전략을 제시합니다.
+
+    Attributes:
+        name (str): 에이전트의 이름
+        llm (ChatOpenAI): 최종 분석에 사용되는 LLM 모델 (o1-mini)
+        system_prompt (SystemMessage): LLM에 제공되는 시스템 프롬프트
+        final_prompt_template (PromptTemplate): 최종 분석을 위한 프롬프트 템플릿
+
+    Note:
+        - temperature=1로 설정되어 있어 다양한 투자 전략을 제시할 수 있습니다.
+        - 최대 3번의 재시도를 통해 안정적인 결과를 보장합니다.
+    """
+    
     def __init__(self, name: str) -> None:
         super().__init__(name)
         load_dotenv()
@@ -59,6 +88,21 @@ class FinalAnalysisAgent(Node):
         )
 
     def extract_json(self, raw_response: str) -> str:
+        """
+        LLM 응답에서 JSON 형식의 데이터를 추출합니다.
+
+        Args:
+            raw_response (str): LLM의 원본 응답 텍스트
+
+        Returns:
+            str: 추출된 JSON 문자열
+                마크다운 코드 블록이 있는 경우 해당 부분만 추출
+                없는 경우 원본 응답 반환
+
+        Note:
+            정규식을 사용하여 ```json ... ``` 형식의 코드 블록을 처리합니다.
+        """
+        
         # 마크다운 코드 블록이 있는 경우 해당 부분만 추출
         match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", raw_response, re.DOTALL)
         if match:
@@ -67,11 +111,39 @@ class FinalAnalysisAgent(Node):
 
     def process(self, state: GraphState) -> GraphState:
         """
-        LangGraph에서 호출되는 메서드.
-        1) company_name, integrated_report, (선택) user_persona 등 읽기
-        2) LLM 호출 → JSON 파싱
-        3) state["final_opinion"], state["portfolio_suggestion"], state["final_report"] 등에 결과 저장
-        4) 실패 시 기본값
+        LangGraph 노드로서 최종 투자 분석을 수행합니다.
+
+        Args:
+            state (GraphState): 현재 그래프의 상태
+                필요한 키:
+                - company_name: 분석 대상 기업명
+                - integrated_report: 통합 분석 리포트
+                선택적 키:
+                - investment_persona: 투자자 성향
+
+        Returns:
+            GraphState: 업데이트된 상태
+                추가되는 키:
+                - final_opinion: 최종 매매 의견 ("매수"/"매도"/"관망")
+                - portfolio_suggestion: 자본 배분 제안
+                - final_report: 최종 보고서 문자열
+                실패 시:
+                - error: 오류 메시지
+
+        Note:
+            - 최대 3번의 재시도를 수행합니다.
+            - 모든 시도 실패 시 기본값 ("관망", "0% 매수/매도")을 반환합니다.
+            - JSON 파싱 실패 시 에러 메시지를 포함합니다.
+
+        Example:
+            >>> state = {
+            ...     "company_name": "LG화학",
+            ...     "integrated_report": "리포트 내용...",
+            ...     "investment_persona": "중고위험(적극적)"
+            ... }
+            >>> result = agent.process(state)
+            >>> print(result["final_opinion"])  # "매수"
+            >>> print(result["portfolio_suggestion"])  # "사용 가능한 자본의 30% 매수"
         """
         print(f"[{self.name}] process() 호출")
 

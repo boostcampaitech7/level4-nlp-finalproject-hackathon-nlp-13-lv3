@@ -13,13 +13,35 @@ from LangGraph_base import Node, GraphState
 
 class GoogleNewsFetcher:
     """
-    구글 뉴스 RSS를 이용해 특정 키워드 관련 최신 뉴스를 불러오는 클래스입니다.
-    타이틀, URL, 발행일 정보를 추출합니다.
+    구글 뉴스 RSS 피드를 통해 특정 키워드에 관한 최신 뉴스를 수집하는 클래스입니다.
+
+    Google News RSS를 사용하여 키워드 기반의 뉴스 검색을 수행하고,
+    각 뉴스 항목의 제목, URL, 발행일 정보를 추출합니다.
+
+    Attributes:
+        base_url (str): 구글 뉴스 RSS 기본 URL
     """
     def __init__(self):
         self.base_url = "https://news.google.com/rss"
 
     def _fetch_news(self, url: str, k: int = 3) -> list:
+        """
+        RSS 피드에서 지정된 수의 뉴스 항목을 가져옵니다.
+
+        Args:
+            url (str): RSS 피드 URL
+            k (int, optional): 가져올 뉴스 항목 수. 기본값은 3
+
+        Returns:
+            list: 뉴스 항목 리스트
+                각 항목은 딕셔너리 형태:
+                {
+                    'title': str,
+                    'link': str,
+                    'published': str
+                }
+        """
+        
         news_data = feedparser.parse(url)
         entries = news_data.entries[:k]
         result = []
@@ -33,6 +55,21 @@ class GoogleNewsFetcher:
         return result
 
     def _collect_news(self, news_list: list) -> list:
+        """
+        뉴스 리스트를 정제된 형식으로 변환합니다.
+
+        Args:
+            news_list (list): _fetch_news()로부터 받은 뉴스 항목 리스트
+
+        Returns:
+            list: 정제된 뉴스 항목 리스트
+                각 항목은 딕셔너리 형태:
+                {
+                    'title': str,
+                    'url': str,
+                    'published': str
+                }
+        """
         if not news_list:
             print("해당 키워드의 뉴스가 없습니다.")
             return []
@@ -46,6 +83,23 @@ class GoogleNewsFetcher:
         return result
 
     def fetch_news_by_keyword(self, keyword: str, k: int = 3) -> list:
+        """
+        특정 키워드에 대한 뉴스를 검색하고 수집합니다.
+
+        Args:
+            keyword (str): 검색할 키워드
+            k (int, optional): 가져올 뉴스 항목 수. 기본값은 3
+
+        Returns:
+            list: 수집된 뉴스 항목 리스트
+                각 항목은 딕셔너리 형태:
+                {
+                    'title': str,
+                    'url': str,
+                    'published': str
+                }
+        """
+        
         if keyword:
             encoded_keyword = quote(keyword)
             url = f"{self.base_url}/search?q={encoded_keyword}&hl=ko&gl=KR&ceid=KR:ko"
@@ -55,6 +109,21 @@ class GoogleNewsFetcher:
         return self._collect_news(news_list)
 
 class NewsAnalysisAgent(Node):
+    """
+    뉴스 데이터를 수집하고 분석하여 투자 인사이트를 제공하는 에이전트입니다.
+
+    Google News에서 특정 기업 관련 뉴스를 수집하고, LLM을 사용하여
+    뉴스가 해당 기업의 주가에 미칠 수 있는 영향을 분석합니다.
+
+    Attributes:
+        name (str): 에이전트의 이름
+        llm (ChatOpenAI): 뉴스 분석에 사용되는 LLM 모델 (gpt-4o-mini)
+        system_prompt (SystemMessage): LLM에 제공되는 시스템 프롬프트
+        final_prompt_template (PromptTemplate): 뉴스 분석을 위한 프롬프트 템플릿
+        final_answer_chain: 프롬프트와 LLM을 연결한 체인
+        news_fetcher (GoogleNewsFetcher): 뉴스 수집을 위한 인스턴스
+    """
+    
     def __init__(self, name: str) -> None:
         super().__init__(name)
         load_dotenv()  # 환경변수 로드
@@ -96,8 +165,25 @@ class NewsAnalysisAgent(Node):
 
     def format_news_data(self, news_items: list) -> str:
         """
-        불러온 뉴스 데이터를 타이틀, 발행일 정보를 포함하는 문자열로 포맷합니다.
+        수집된 뉴스 데이터를 분석에 적합한 형식의 문자열로 변환합니다.
+
+        Args:
+            news_items (list): 뉴스 항목 리스트
+                각 항목은 딕셔너리 형태:
+                {
+                    'title': str,
+                    'url': str,
+                    'published': str
+                }
+
+        Returns:
+            str: 포맷팅된 뉴스 데이터 문자열
+                형식:
+                1. 뉴스 제목 (발행일: YYYY-MM-DD)
+                2. 뉴스 제목 (발행일: YYYY-MM-DD)
+                ...
         """
+
         if not news_items:
             return "뉴스 데이터가 없습니다."
         formatted = ""
@@ -106,9 +192,32 @@ class NewsAnalysisAgent(Node):
         return formatted
 
     def process(self, state: GraphState) -> GraphState:
+        """
+        LangGraph 노드로서 뉴스 수집 및 분석을 수행합니다.
+
+        Args:
+            state (GraphState): 현재 그래프의 상태
+                필요한 키:
+                - company_name: 분석할 기업명
+
+        Returns:
+            GraphState: 업데이트된 상태
+                추가되는 키:
+                - news_report: 뉴스 분석 결과
+                    포함 내용:
+                    - 뉴스 데이터 요약
+                    - 매매 의견
+                    - 투자 근거
+
+        Note:
+            최신 뉴스 10개를 수집하여 분석합니다.
+        """
+        
         print(f"[{self.name}] process() 호출")
+        
         # state에서 'company_name'을 뉴스 검색 키워드로 사용
         company = state.get("company_name", "Unknown")
+        
         # 특정 기업 관련 최신 뉴스 10개를 불러옴
         news_items = self.news_fetcher.fetch_news_by_keyword(company, k=10)
         formatted_news = self.format_news_data(news_items)
