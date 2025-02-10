@@ -9,7 +9,12 @@ DATABASE_URL = settings.database_url
 
 
 # SQLite를 사용할 경우 추가적인 연결 옵션 설정
-connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {
+    "keepalives": 1,
+    "keepalives_idle": 30,
+    "keepalives_interval": 5,
+    "keepalives_count": 5
+}
 
 # 엔진 생성 (debug 모드 시 SQL 로깅을 활성화할 수 있음)
 engine = create_engine(DATABASE_URL, echo=settings.debug,
