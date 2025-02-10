@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from app.schemas.invest import TaskCreate, TaskResponse, ReportRequest, ReportResponse
+from app.schemas.invest import TaskCreate, TaskResponse, ReportRequest, ReportResponse, ReportLogsResponse
 
 from app.db.session import get_db
 from app.schemas.db import Task, Stock
@@ -48,3 +48,30 @@ async def get_a_report(task_id: UUID = Query(...), user_id: UUID = Query(...), d
         raise HTTPException(status_code=404, detail="Task not found")
 
     return ReportResponse(task_id=str(task.task_id), status=task.status, status_message=task.status_message, text=task.report_generate)
+
+
+@router.get("/report_logs", response_model=ReportLogsResponse)
+async def get_report_logs(user_id: UUID = Query(...), stock_code: str = Query(...), db: Session = Depends(get_db)):
+
+    tasks = db.query(Task).filter(Task.create_user_id ==
+                                  user_id, Task.stock_code == stock_code).all()
+    if tasks is None:
+        raise HTTPException(status_code=404, detail="Reports not found")
+
+    logs = []
+    for task in tasks:
+        logs.append({
+            "task_id": str(task.task_id),
+            "status": task.status,
+            "status_message": task.status_message,
+            "created_at": task.created_at,
+            "modified_at": task.modified_at,
+            "stock_code": task.stock_code,
+            "stock_name": task.stock_name,
+            "investor_type": task.investor_type,
+            "stock_position": task.stock_position,
+            "stock_justification": task.stock_justification,
+            "report_generate": task.report_generate
+        })
+
+    return ReportLogsResponse(report_logs=logs)
