@@ -12,7 +12,22 @@ from LangGraph_base import Node, GraphState
 load_dotenv()
 
 class ReportIntegrationNode(Node):
+    """
+    주식 보고서 통합 에이전트:
+    여러 분야의 리포트(기업 분석, 뉴스, 거시경제, 재무제표, 호가창/차트)를 종합하여
+    하나의 완성도 높은 통합 보고서를 생성하는 역할을 수행합니다.
+    """
+    
     def __init__(self, name: str) -> None:
+        """
+        에이전트 초기화 함수.
+
+        이 함수는 에이전트의 이름을 설정하고, LLM(ChatOpenAI) 인스턴스를 초기화하며,
+        주식 보고서 통합 전문가로서의 시스템 프롬프트와 최종 프롬프트 템플릿을 설정합니다.
+
+        Args:
+            name (str): 에이전트의 이름
+        """
         super().__init__(name)
         
         # LLM 초기화 (시스템 프롬프트 포함)
@@ -53,6 +68,23 @@ class ReportIntegrationNode(Node):
         self.final_answer_chain = self.final_prompt_template | self.llm
 
     def process(self, state: GraphState) -> GraphState:
+        """
+        LangGraph 노드 인터페이스를 구현하는 함수로, 
+        여러 리포트 데이터를 통합하여 하나의 완성도 높은 주식 보고서를 생성합니다.
+
+        1. state로부터 필요한 리포트 데이터를 추출합니다.
+        2. deficiency_details가 존재하는 경우, 이를 보완 요청 텍스트로 포함합니다.
+        3. 최종 프롬프트를 구성하고 LLM을 호출하여 통합 보고서를 생성합니다.
+        4. 생성된 통합 보고서를 state에 저장합니다.
+
+        Args:
+            state (GraphState): 에이전트 실행 시 전달되는 상태 정보 dictionary.
+                필요한 키: 'company_name', 'financial_report', 'news_report',
+                'macro_report', 'fin_statements_report', 'daily_chart_report', 'deficiency_details' (선택)
+
+        Returns:
+            GraphState: 생성된 통합 보고서가 포함된 업데이트된 상태 정보.
+        """
         print(f"[{self.name}] process() 호출")
         
         # 필수 정보 가져오기

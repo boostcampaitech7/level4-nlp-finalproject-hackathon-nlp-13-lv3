@@ -1,5 +1,3 @@
-# report_supervisor_agent.py
-
 from LangGraph_base import Node, GraphState
 import time
 from langchain_openai import ChatOpenAI
@@ -9,10 +7,29 @@ from dotenv import load_dotenv
 import json
 
 def get_next_node(state: GraphState) -> str:
+    """
+    현재 상태에서 다음 노드의 식별자를 가져옵니다.
+
+    Args:
+        state (GraphState): "next" 키를 포함할 수 있는 현재 상태 사전.
+
+    Returns:
+        str: 상태 사전에 "next" 키가 있으면 해당 값을, 없으면 "FINISH"를 반환합니다.
+    """
     return state.get("next", "FINISH")
 
 class ReportSupervisorAgent(Node):
     def __init__(self, name: str, quality_threshold: float = 5.0) -> None:
+        """
+        ReportSupervisorAgent 클래스를 초기화합니다.
+
+        이 함수는 환경변수를 로드하고, 보고서 품질 감독자로서의 역할을 수행하기 위해 필요한 LLM(ChatOpenAI) 인스턴스와
+        진단 프롬프트 템플릿을 초기화합니다. 또한, 보고서 품질 임계값(quality_threshold)을 설정합니다.
+
+        Args:
+            name (str): 에이전트의 이름.
+            quality_threshold (float, optional): 허용 가능한 최소 보고서 품질 점수. 기본값은 5.0입니다.
+        """
         load_dotenv()
         super().__init__(name)
         self.quality_threshold = quality_threshold
@@ -72,6 +89,21 @@ class ReportSupervisorAgent(Node):
         self.diagnosis_chain = self.diagnosis_prompt | self.llm
 
     def process(self, state: GraphState) -> GraphState:
+        """
+        통합 보고서의 품질을 평가하고, 다음 처리 단계(다음 노드)를 결정합니다.
+
+        이 함수는 상태에서 보고서 평가 점수를 확인하여, 점수가 기준 미만인 경우 부족한 영역을 진단합니다.
+        재시도 횟수가 3회 이상이거나 점수가 기준 이상이면 다음 노드로 "FinalAnalysisAgent"를 지정합니다.
+        만약 보고서 품질이 낮을 경우, 추가 문구를 붙인 통합 보고서를 LLM에 전달하여 부족한 영역과 그 이유를 JSON 형식으로 받아옵니다.
+        진단 결과에 따라 부족한 영역에 맞는 다음 노드를 결정하고, 재시도 횟수를 갱신하여 상태에 저장합니다.
+
+        Args:
+            state (GraphState): 현재 상태를 나타내는 사전. 이 사전은 "report_score", "integrated_report",
+                                "retry_count", "company_name" 등의 키를 포함해야 합니다.
+
+        Returns:
+            GraphState: 부족한 영역 진단 결과 및 다음 노드 정보가 업데이트된 상태 사전.
+        """
         print(f"[{self.name}] process() 호출 - 감독자 노드 실행")
         
         retry_count = state.get("retry_count", 0)
