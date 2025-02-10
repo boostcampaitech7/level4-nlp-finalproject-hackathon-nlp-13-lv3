@@ -177,3 +177,4 @@ data
 __pycache__
 notebooks/RAG/parser+splitter/layoutparse
 neo4j_data
+.env.prod
