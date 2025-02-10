@@ -9,6 +9,17 @@ import request as req
 # ------------------------------
 # 전역 변수 및 함수 정의
 # ------------------------------
+hide_streamlit_style = """
+    <style>
+    /* 오른쪽 상단 햄버거 메뉴 숨기기 */
+    #MainMenu {visibility: hidden;}
+    /* 앱 하단 푸터 숨기기 */
+    footer {visibility: hidden;}
+    /* 헤더 전체 숨기기 (Deploy 버튼도 포함될 수 있음) */
+    header {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # 샘플 기업 리스트 (원하는 기업명으로 수정)
 companies = ["CJ제일제당", "LG화학", "SK케미칼", "SK하이닉스",
