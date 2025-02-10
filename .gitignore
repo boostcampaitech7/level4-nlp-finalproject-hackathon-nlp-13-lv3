@@ -169,3 +169,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+## custom
+
+elastic
+data
+__pycache__
+notebooks/RAG/parser+splitter/layoutparse
+neo4j_data
+.env.prod
