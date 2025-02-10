@@ -90,8 +90,7 @@ NLP-CHEF/
 ![RAG 아키텍처](./docs/RAG_arc.png)
 
 ## **2.4 Multi-Agent 아키텍처**
-![멀티에이전트 아키텍처](./docs/multi_agent_arc.png)
-
+![멀티에이전트 아키텍처](./docs/multi_agent.png)
 
 # 3. Requirements
 - Python 3.11.9
