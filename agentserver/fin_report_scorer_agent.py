@@ -7,6 +7,24 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from LangGraph_base import Node, GraphState
 
 def safe_softmax(logits: torch.Tensor, dim: int = 0) -> torch.Tensor:
+    """
+    안전한 softmax 연산을 수행합니다.
+    
+    일반적인 softmax의 숫자 불안정성 문제를 처리하여,
+    inf나 -inf 값이 있는 경우에도 안전하게 확률을 계산합니다.
+
+    Args:
+        logits (torch.Tensor): 입력 로짓 텐서
+        dim (int, optional): softmax를 적용할 차원. 기본값은 0
+
+    Returns:
+        torch.Tensor: 계산된 확률 분포
+
+    Note:
+        - 모든 값이 inf인 경우 균일 분포를 반환
+        - 최대값이 -inf인 경우 균일 분포를 반환
+        - 지수 합이 0인 경우 균일 분포를 반환
+    """
     if torch.all(torch.isinf(logits)):
         return torch.ones_like(logits) / logits.numel()
     max_val, _ = torch.max(logits, dim=dim, keepdim=True)
@@ -19,6 +37,20 @@ def safe_softmax(logits: torch.Tensor, dim: int = 0) -> torch.Tensor:
     return exps / sum_exps
 
 class ReportScorerAgent(Node):
+    """
+    주식 리포트의 품질을 평가하는 에이전트입니다.
+    
+    LLM을 사용하여 통합 리포트의 품질을 0-10점 사이의 점수로 평가합니다.
+    지정된 임계값(기본값: 5점)을 넘지 못하면 품질 개선 프로세스가 시작됩니다.
+
+    Attributes:
+        name (str): 에이전트의 이름
+        model_name (str): 사용할 LLM 모델의 이름
+        device (str): 연산에 사용할 디바이스 ('cuda' 또는 'cpu')
+        tokenizer: 텍스트 토크나이저
+        model: 로드된 LLM 모델
+        valid_tokens (dict): 유효한 숫자 토큰들의 매핑
+    """
     def __init__(self, name: str, eval_model: str) -> None:
         super().__init__(name)
         self.model_name = eval_model
@@ -38,6 +70,15 @@ class ReportScorerAgent(Node):
         self._prepare_valid_tokens()
 
     def _prepare_valid_tokens(self):
+        """
+        숫자 평가를 위한 토큰을 준비합니다.
+        
+        0-9까지의 숫자에 대한 토큰 ID를 미리 계산하고 저장하며,
+        각 숫자에 대한 텐서를 준비합니다.
+        
+        Raises:
+            ValueError: 단일 숫자가 여러 개의 토큰으로 인코딩될 경우 발생
+        """
         self.valid_tokens = {}
         for num in range(0, 10):
             token_str = str(num)
@@ -55,8 +96,24 @@ class ReportScorerAgent(Node):
     @torch.no_grad()
     def process(self, state: GraphState) -> GraphState:
         """
-        state["integrated_report"]에 저장된 보고서 텍스트를 평가하여,
-        1~10 사이의 점수를 가중평균 방식으로 산출하고, 이를 state["report_score"]에 저장합니다.
+        통합 리포트의 품질을 평가하고 점수를 부여합니다.
+
+        통합 리포트 텍스트를 입력받아 LLM을 통해 품질을 평가하고,
+        0-10점 사이의 점수를 계산하여 state에 저장합니다.
+
+        Args:
+            state (GraphState): 현재 그래프의 상태
+                필수 키:
+                - integrated_report: 평가할 통합 리포트 텍스트
+
+        Returns:
+            GraphState: 업데이트된 상태
+                추가되는 키:
+                - report_score: 산출된 리포트 품질 점수 (float)
+
+        Note:
+            리포트가 없을 경우 0점을 부여합니다.
+            점수 계산은 토큰 확률의 가중 평균을 사용합니다.
         """
         report = state.get("integrated_report", "")
         if not report:
