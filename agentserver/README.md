@@ -1,4 +1,4 @@
-# Stock Analysis Agent System
+# Stock Analysis AI Agents System
 
 ## Overview
 Multi-Agent 시스템을 활용하여 주식 투자 분석 및 매매 의견을 제공하는 종합 분석 시스템입니다. 다양한 전문 에이전트들이 각자의 전문 영역에서 데이터를 수집하고 분석해서 최종적으로 통합된 투자 결정을 제시합니다.
