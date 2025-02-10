@@ -19,6 +19,15 @@ class FinancialStatementsAnalysisAgent(Node):
     """
 
     def __init__(self, name: str) -> None:
+        """
+        에이전트 초기화 함수.
+        
+        이 함수는 에이전트의 이름을 설정하고, 환경변수를 로드하며,
+        LLM(ChatOpenAI) 인스턴스와 재무제표 분석을 위한 시스템 및 최종 프롬프트 템플릿을 초기화합니다.
+
+        Args:
+            name (str): 에이전트의 이름
+        """
         super().__init__(name)
         load_dotenv()
 
@@ -60,6 +69,13 @@ class FinancialStatementsAnalysisAgent(Node):
         """
         특정 한국 기업의 최근 4개년 재무 비율을 계산하여 가져오는 함수.
         모든 비율을 % 단위로 변환하고, 소수점 둘째 자리에서 반올림.
+
+        Args:
+            company_name (str): 재무제표 데이터를 조회할 기업명
+
+        Returns:
+            dict or str: 연도별 재무 비율 데이터가 담긴 dictionary,
+                         또는 기업 코드 조회 실패나 데이터 조회 오류 메시지 (str)
         """
         company_code_list = {
             "네이버": "035420",
@@ -130,8 +146,17 @@ class FinancialStatementsAnalysisAgent(Node):
                     else:
                         filtered_data[year][label] = "데이터 없음"
 
-            # 비율 계산 함수 (소수점 둘째 자리 반올림 + % 변환)
             def calc_ratio(numerator, denominator):
+                """
+                내부 함수: 두 값(분자, 분모)을 받아 비율을 계산한 후, 소수점 둘째 자리까지 반올림한 후 % 형태의 문자열로 반환합니다.
+                
+                Args:
+                    numerator: 분자 값 (예: 순이익)
+                    denominator: 분모 값 (예: 투자자본)
+                
+                Returns:
+                    str: 계산된 비율을 '%' 문자열로 반환하거나, 부적절한 데이터일 경우 "N/A"를 반환
+                """
                 if (numerator != "데이터 없음" and
                         denominator != "데이터 없음" and
                         denominator != 0):
@@ -168,9 +193,14 @@ class FinancialStatementsAnalysisAgent(Node):
 
     def format_financial_statements(self, fs_data: dict) -> str:
         """
-        재무 비율(또는 재무제표) 데이터를 문자열로 가공.
-        현재 구조는 '연도'별 정보가 key가 되어 있으며,
-        그 내부에 각 재무 항목(부채비율, ROE 등)이 담겨 있음.
+        재무 비율(또는 재무제표) 데이터를 문자열로 가공하여 가독성이 높은 형식으로 변환합니다.
+        데이터는 연도별로 구분되며, 각 연도 내에서 재무 항목(예: 부채비율, ROE 등)과 해당 값이 포함됩니다.
+
+        Args:
+            fs_data (dict): 연도별 재무 비율 데이터를 담고 있는 dictionary
+
+        Returns:
+            str: 포맷팅된 재무제표 정보 문자열
         """
         formatted = f"기업명: {self.current_company}\n"
 
@@ -183,11 +213,18 @@ class FinancialStatementsAnalysisAgent(Node):
 
     def process(self, state: GraphState) -> GraphState:
         """
-        LangGraph 노드 인터페이스 구현:
-        1) state에서 company_name 가져옴
-        2) 재무제표 데이터 수집/포맷
-        3) LLM 분석 호출
-        4) 결과를 state['fin_statements_report'] 등에 저장
+        LangGraph 노드 인터페이스를 구현하는 함수로, 
+        1) state에서 'company_name'을 추출하여 해당 기업의 재무제표 데이터를 수집합니다.
+        2) 수집한 데이터를 포맷팅하여 LLM 분석을 위한 입력 형태로 변환합니다.
+        3) LLM 분석을 호출하여 투자 의견 및 종합 보고서를 생성합니다.
+        4) 분석 결과를 state에 저장합니다.
+
+        Args:
+            state (GraphState): 에이전트 실행 시 전달되는 상태 정보 dictionary,
+                                  'company_name' 키를 포함해야 함
+
+        Returns:
+            GraphState: 분석 결과가 포함된 업데이트된 상태 정보
         """
         print(f"[{self.name}] process() 호출")
 
