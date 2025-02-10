@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -6,6 +7,10 @@ import streamlit.components.v1 as components
 import time
 from auth import set_google_login_btn
 import request as req
+from dotenv import load_dotenv
+
+load_dotenv()
+CHATBOT_URL = os.environ['CHATBOT_URL']
 # ------------------------------
 # 전역 변수 및 함수 정의
 # ------------------------------
@@ -122,6 +127,38 @@ def get_table_download_link(df):
 # 공통 사이드바 (로그인 후에만 표시)
 
 
+def sidebar_chatbot_button():
+    helper_chatbot_html = """
+    <style>
+    /* 페이지 오른쪽 상단에 고정된 컨테이너 */
+    .fixed-helper-chatbot {
+        position: fixed;
+        top: 20px;    /* 화면 상단으로부터의 간격 (원하는 값으로 조절) */
+        right: 20px;  /* 화면 오른쪽으로부터의 간격 (원하는 값으로 조절) */
+        z-index: 1000;
+    }
+
+    /* 버튼 스타일 */
+    .fixed-helper-chatbot button {
+        background-color: #007BFF;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    </style>
+    <div class="fixed-helper-chatbot">
+    <a href="{CHATBOT_URL}" target="_blank">
+        <button>도우미 챗봇</button>
+    </a>
+    </div>
+    """
+
+    st.markdown(helper_chatbot_html, unsafe_allow_html=True)
+
+
 def common_sidebar():
     st.sidebar.markdown("# AI 에이전트를 활용한 주식 매매 시스템")
     nav_option = st.sidebar.radio(
@@ -143,6 +180,7 @@ def common_sidebar():
     st.session_state.selected_company = company
 
     sidebar_logout_button()
+    sidebar_chatbot_button()
 # ------------------------------
 # 페이지 함수 정의
 # ------------------------------
