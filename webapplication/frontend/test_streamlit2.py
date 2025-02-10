@@ -243,7 +243,11 @@ def dashboard_page():
             if selected_task_id:
                 report_content = filtered_reports[filtered_reports['task_id']
                                                   == selected_task_id]['report_generate'].values[0]
-                st.text_area("보고서 내용", report_content, height=400)
+                status = filtered_reports[filtered_reports['task_id']
+                                          == selected_task_id]['status'].values[0]
+
+                st.text_area("보고서 내용", report_content if status ==
+                             '완료' else f'보고서 생성 중..\n', height=400)
         hoga = req.get_stock_hoga(stock_code)
 
         if hoga.status_code == 200:
