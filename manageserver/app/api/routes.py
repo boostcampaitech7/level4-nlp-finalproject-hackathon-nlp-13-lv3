@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
 import os
+import json
 import requests
 from app.models.schemas import TradeRequest, TradeResponse, RejectionRequest
 from app.services.kakao_notification import KakaoNotification
@@ -13,14 +14,16 @@ kakao_notifier = KakaoNotification()
 @router.post("/trade", response_model=TradeResponse)
 async def execute_trade(trade: TradeRequest):
     """ 거래 요청을 저장하고 거래 ID 반환 후 즉시 인증 또는 거래 실행 """
-    print(f"🔍 [DEBUG] 요청 데이터: {trade}")  # ✅ 요청 데이터 확인용
+    print(f"🔍 [DEBUG] 요청 데이터: {trade}")
 
-    # ✅ `Database` 객체에서 `save_trade_request()`를 호출하도록 수정
-    db = kakao_notifier.db  # `Database` 객체 가져오기
-    trade_id = db.save_trade_request(trade.user_id, trade.stock_code, trade.position, trade.justification) 
+    trade_id = db.save_trade_request(trade.user_id, trade.stock_code, trade.position, trade.justification,
+                                     trade.task_id)
 
-    # ✅ 거래 요청 저장 후 즉시 `send_trade_request()` 실행
     result = kakao_notifier.send_trade_request(trade_id)
+
+    # ✅ `result`가 dict이면 JSON 문자열로 변환
+    if isinstance(result, dict):
+        result = json.dumps(result, ensure_ascii=False)  # 한글도 유지
 
     return TradeResponse(trade_id=trade_id, message=result)
 
@@ -32,6 +35,16 @@ async def kakao_callback(code: str = Query(...), state: str = Query(None)):
         return {"error": "거래 ID (state) 누락"}
 
     trade_id = int(state)
+
+    # ✅ 거래 요청 데이터 조회
+    trade_data = db.get_trade_request(trade_id)
+    print(f"🔍 [DEBUG] trade_data: {trade_data}")
+
+    if not trade_data:
+        return {"error": "거래 요청을 찾을 수 없습니다."}
+
+    # ✅ `trade_data` 변수 할당 (task_id 포함)
+    user_id, stock_code, position, justification, task_id = trade_data
 
     # ✅ 카카오 API에서 액세스 토큰 요청
     token_url = "https://kauth.kakao.com/oauth/token"
@@ -50,14 +63,12 @@ async def kakao_callback(code: str = Query(...), state: str = Query(None)):
     token_data = response.json()
     access_token = token_data.get("access_token")
 
-    # ✅ DB에 액세스 토큰 저장
-    trade_data = db.get_trade_request(trade_id)
-    print(f"🔍 [DEBUG] trade_data: {trade_data}")
-    if not trade_data:
-        return {"error": "거래 요청을 찾을 수 없습니다."}
-
-    user_id, _, _, _ = trade_data
-    db.save_tokens(user_id, access_token, "")
+    # ✅ DB에 액세스 토큰 저장 (메서드 추가 필요)
+    try:
+        db.save_tokens(user_id, access_token, "")
+        print(f"✅ [INFO] 사용자 {user_id}의 액세스 토큰 저장 완료")
+    except AttributeError:
+        return {"error": "DB 저장 오류: save_tokens 메서드가 없습니다."}
 
     return {"message": "카카오 인증 완료 및 액세스 토큰 저장", "access_token": access_token}
 

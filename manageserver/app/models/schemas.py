@@ -6,6 +6,7 @@ class TradeRequest(BaseModel):
     stock_code: str
     position: str  # 예: "매수" 또는 "매도"
     justification: str  # 거래 근거 설명
+    task_id: str #보고서 번호
 
 class RejectionRequest(BaseModel):
     """ 사용자가 거래를 거부할 때 사용되는 스키마 """
