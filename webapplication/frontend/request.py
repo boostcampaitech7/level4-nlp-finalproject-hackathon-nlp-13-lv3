@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BACKEND_URL = os.environ['BACKEND_URL']
+FINANCE_API_URL = os.environ['FINANCE_API_URL']
 
 
 def create_report_task(user_id: str, stock_code: str, investor_type: str):
@@ -41,4 +42,10 @@ def get_report_logs(user_id: str, stock_code: str):
     }
 
     response = requests.get(url, params=params)
+    return response
+
+
+def get_stock_hoga(stock_code: str):
+    url = FINANCE_API_URL + f"/hoga/{stock_code}"
+    response = requests.get(url)
     return response
