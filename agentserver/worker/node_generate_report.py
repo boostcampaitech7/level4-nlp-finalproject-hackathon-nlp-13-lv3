@@ -1,9 +1,9 @@
-
 import os
-# LangGraph.py
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
+import requests
+import json
+from dotenv import load_dotenv
 from LangGraph_base import Graph, GraphState
 # 에이전트 모듈들
 from fin_financial_statements_agent import FinancialStatementsAnalysisAgent
@@ -15,53 +15,104 @@ from report_integration_agent import ReportIntegrationNode
 from final_analysis_agent import FinalAnalysisAgent
 from fin_report_scorer_agent import ReportScorerAgent
 from report_supervisor_agent import ReportSupervisorAgent, get_next_node
-
 from app.db.session import get_db, get_db_session
 from app.schemas.db import Stock, Task
 
-import requests
-import json
-
-from dotenv import load_dotenv
 
 MANAGER_API_URL = os.environ.get("MANAGER_API_URL")
 load_dotenv()
+
 # StartNode 및 EndNode 정의
 START = "START"
 END = "END"
 
 
 class StartNode:
+    """
+    그래프의 시작점을 나타내는 노드입니다.
+    초기 상태를 설정하고 처리 흐름을 시작합니다.
+
+    Attributes:
+        name (str): 노드 이름, 기본값은 "START"
+    """
+    
     def __init__(self, name: str = START) -> None:
         self.name = name
 
     def process(self, state: GraphState) -> GraphState:
+        """
+        초기 상태를 확인하고 로깅합니다.
+
+        Args:
+            state (GraphState): 초기 그래프 상태
+
+        Returns:
+            GraphState: 처리된 초기 상태
+        """
+        
         print(f"[{self.name}] 시작 노드: 초기 state 설정 완료")
         return state
 
 
 class EndNode:
+    """
+    그래프의 종료점을 나타내는 노드입니다.
+    모든 처리가 완료된 후의 최종 상태를 처리합니다.
+
+    Attributes:
+        name (str): 노드 이름, 기본값은 "END"
+    """
+    
     def __init__(self, name: str = END) -> None:
         self.name = name
 
     def process(self, state: GraphState) -> GraphState:
+        """
+        최종 상태를 확인하고 로깅합니다.
+
+        Args:
+            state (GraphState): 최종 그래프 상태
+
+        Returns:
+            GraphState: 최종 처리된 상태
+        """
+        
         print(f"[{self.name}] 종료 노드: 최종 state 도달")
         return state
 
 
 def create_graph() -> Graph:
+    """
+    투자 분석을 위한 전체 워크플로우 그래프를 생성합니다.
+
+    그래프는 다음 컴포넌트들로 구성됩니다:
+    1. 기본 분석 노드들
+        - 재무제표 분석
+        - 뉴스 분석
+        - 거시경제 분석
+        - 증권사 리포트 분석
+        - 일봉/차트 분석
+    2. 통합 및 평가 노드들
+        - 리포트 통합
+        - 품질 평가 (EXAONE 모델 사용)
+        - 품질 감독 (임계값 5.0)
+        - 최종 분석
+
+    Returns:
+        Graph: 설정된 분석 워크플로우 그래프
+    """
+    
     graph = Graph()
 
     # 에이전트 노드 생성
     start_node = StartNode()
-    fs_node = FinancialStatementsAnalysisAgent(
-        "FinancialStatementsAnalysisAgent")
+    fs_node = FinancialStatementsAnalysisAgent("FinancialStatementsAnalysisAgent")
     news_node = NewsAnalysisAgent("NewsAnalysisAgent")
     macro_node = MacroeconomicAnalysisAgent("MacroeconomicAnalysisAgent")
-    financial_node = FinancialReportsAnalysisAgent(
-        "FinancialReportsAnalysisAgent")
+    financial_node = FinancialReportsAnalysisAgent("FinancialReportsAnalysisAgent")
     daily_chart_node = DailyChartAnalysisAgent("DailyChartAnalysisAgent")
     integration_node = ReportIntegrationNode("ReportIntegrationNode")
+    
     # LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct
     # deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
     scorer_node = ReportScorerAgent(
@@ -99,19 +150,27 @@ def create_graph() -> Graph:
         "FinalAnalysisAgent": "FinalAnalysisAgent",
         "FINISH": "FinalAnalysisAgent"
     })
+    
     return graph
 
 
 def parse_stock_position(report: str) -> str:
-    """_summary_
-        최종 매매의견에서 주식 포지션을 추출하는 함수
-        ex) 최종 매매의견: 매도, 자산 배분 제안: 100% -> 매도
+    """
+    최종 매매의견에서 주식 포지션을 추출합니다.
+
     Args:
-        report (str): 최종 리포트 문자열열
+        report (str): 최종 리포트 문자열
+            예: "최종 매매의견: 매도, 자산 배분 제안: 100%"
 
     Returns:
-        str: 매도, 매수, 관망 중 하나
+        str: 추출된 포지션 ("매도", "매수", "관망" 중 하나)
+            보고서에서 매매의견을 찾지 못할 경우 "관망" 반환
+
+    Example:
+        >>> parse_stock_position("최종 매매의견: 매수, 자산 배분 제안: 30%")
+        "매수"
     """
+    
     if "매도" in report:
         return "매도"
     elif "매수" in report:
@@ -123,6 +182,33 @@ def parse_stock_position(report: str) -> str:
 
 
 def main():
+    """
+    투자 분석 워크플로우의 메인 실행 함수입니다.
+
+    다음 단계로 실행됩니다:
+    1. DB에서 '시작 전' 상태의 Task 조회
+    2. 초기 상태 설정 및 Task 상태 업데이트
+    3. 그래프 생성 및 실행
+    4. 분석 결과 처리 및 DB 업데이트
+        - 매매 포지션 추출
+        - 리포트 저장
+        - 상태 업데이트
+
+    Database Updates:
+        - Task 상태 변경: "시작 전" -> "생성 중" -> "완료"/"실패"
+        - 생성된 리포트 저장
+        - 매매 포지션 및 근거 업데이트
+        - 수정 시간 업데이트
+
+    Error Handling:
+        - 예외 발생 시 Task 상태를 "실패"로 변경
+        - 에러 메시지를 status_message에 저장
+        - DB 트랜잭션 롤백
+
+    Note:
+        환경 변수 MANAGER_API_URL이 필요합니다.
+    """
+    
     with get_db_session() as db:
         try:
 
@@ -159,7 +245,8 @@ def main():
                 final_state = state
 
             print("\n===== 최종 보고서와 매매 의견 및 포트폴리오 =====")
-            # 최종 보고서는 FinalAnalysisAgent 또는 EndNode에서 생성된 state에 있음
+            
+            # 최종 보고서는 FinalAnalysisAgent 또는 EndNode에서 생성된 state에 있습니다.
             print(final_state.get("final_report", "최종 보고서가 생성되지 않았습니다."))
             print(final_state.get("integrated_report", "최종 통합보고서가 생성되지 않았습니다."))
 
