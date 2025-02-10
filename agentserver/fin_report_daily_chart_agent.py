@@ -5,7 +5,7 @@ from typing import Optional
 import pandas as pd
 from dotenv import load_dotenv
 
-# mojito 설치 필요
+
 import mojito
 
 from langchain_openai import ChatOpenAI
@@ -14,7 +14,7 @@ from langchain_core.prompts import PromptTemplate
 
 from LangGraph_base import Node, GraphState
 
-load_dotenv()  # .env 파일에서 환경 변수 로드
+load_dotenv() 
 
 class DailyChartAnalysisAgent(Node):
     """
