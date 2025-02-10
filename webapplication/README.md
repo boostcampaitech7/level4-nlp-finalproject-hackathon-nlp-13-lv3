@@ -42,7 +42,6 @@ cp .env.example .env
 
 # 필요한 환경 변수:
 # - DATABASE_URL
-# - JWT_SECRET_KEY
 # - API_KEYS
 # 등을 설정
 ```
@@ -64,7 +63,6 @@ streamlit run main.py
 
 ### Backend API
 - RESTful API 엔드포인트
-- JWT 기반 인증
 - PostgreSQL 데이터베이스 연동
 - Nginx 리버스 프록시
 - 구조화된 로깅
@@ -93,9 +91,6 @@ streamlit run main.py
 
 ## Security
 
-- CORS 설정
-- Rate limiting
-- JWT 토큰 인증
 - API 키 관리
 
 ## Deployment
@@ -118,9 +113,3 @@ streamlit run main.py --server.port 8501
 - 스키마 정의: `backend/app/schemas/` 디렉토리에 모델 추가
 - 프론트엔드 개발: `frontend/` 디렉토리에서 Streamlit 컴포넌트 추가
 
-## Troubleshooting
-
-일반적인 문제 해결:
-1. 데이터베이스 연결 오류: 환경 변수 확인
-2. 인증 오류: JWT 토큰 및 API 키 확인
-3. CORS 오류: `middleware.py` 설정 확인
