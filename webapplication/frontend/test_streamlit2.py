@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import base64
 import streamlit.components.v1 as components
-
+import time
 from auth import set_google_login_btn
 import request as req
 # ------------------------------
@@ -385,20 +385,29 @@ def investor_analysis_page():
             user_id = st.query_params.get("user_id")
             stock_code = get_stock_code(selected_company)
 
-            req.create_report_task(user_id, stock_code,
-                                   st.session_state.investor_type)
+            resp = req.create_report_task(user_id, stock_code,
+                                          st.session_state.investor_type)
+
+            print(resp)
+
+            st.session_state.task_id = resp['task_id']
+
             st.rerun()
 
 
 # 5. 보고서 열람 페이지 (방금 생성한 보고서 보여주기)
 
-
 def report_view_page():
     st.title("보고서 열람")
-    if 'report_generated' in st.session_state:
-        st.text_area("생성된 보고서", st.session_state.report_generated, height=400)
+    resp = req.get_report(st.session_state.task_id,
+                          st.query_params.get("user_id"))
+    if resp['status'] == '완료':
+        st.text_area("생성된 보고서", resp['text'], height=500)
     else:
-        st.info("생성된 보고서가 없습니다.")
+        st.info(f"생성된 보고서가 없습니다. {resp['status_message']}")
+        time.sleep(5)
+        st.rerun()
+
     if st.button("Dashboard로 돌아가기"):
         st.session_state.page = "dashboard"
         st.rerun()
