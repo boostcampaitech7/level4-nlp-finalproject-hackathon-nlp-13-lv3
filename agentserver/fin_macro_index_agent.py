@@ -1,5 +1,3 @@
-# fin_macro_index_agent.py
-
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv

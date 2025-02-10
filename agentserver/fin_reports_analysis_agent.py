@@ -1,5 +1,3 @@
-# fin_reports_analysis_agent.py
-
 import os
 import requests
 from dotenv import load_dotenv
@@ -11,6 +9,26 @@ import time
 from LangGraph_base import Node, GraphState 
 
 class FinancialReportsAnalysisAgent(Node):
+    """
+    증권사 리포트를 수집하고 분석하여 투자 인사이트를 제공하는 에이전트입니다.
+
+    외부 API를 통해 증권사 리포트 데이터를 가져오고, LLM을 사용하여
+    목표주가, 투자의견 등을 분석하여 구체적인 투자 전략을 제시합니다.
+
+    Attributes:
+        name (str): 에이전트의 이름
+        llm (ChatOpenAI): 리포트 분석에 사용되는 LLM 모델 (gpt-4o-mini)
+        system_prompt (SystemMessage): LLM에 제공되는 시스템 프롬프트
+            - 날짜와 증권사 출처 정보 포맷 지정
+            - 목표주가와 투자의견 포함 요구
+            - 인사이트 제공 방식 정의
+        final_prompt_template (PromptTemplate): 최종 분석을 위한 프롬프트 템플릿
+        final_answer_chain: 프롬프트와 LLM을 연결한 체인
+
+    Note:
+        환경 변수 'FINANCIAL_API_URL'이 필요합니다.
+        기본값: "http://10.28.224.32:30800/api/query"
+    """
     def __init__(self, name: str) -> None:
         super().__init__(name)
         load_dotenv()
@@ -42,6 +60,23 @@ class FinancialReportsAnalysisAgent(Node):
         self.final_answer_chain = self.final_prompt_template | self.llm
 
     def call_financial_api(self, query: str) -> str:
+        """
+        외부 금융 API를 호출하여 증권사 리포트 데이터를 가져옵니다.
+
+        Args:
+            query (str): API에 전달할 쿼리 문자열
+                예: "LG화학의 증권 리포트를 분석하여 투자 전략을 제시해 주세요."
+
+        Returns:
+            str: API 응답 결과
+                성공 시: 분석된 리포트 내용
+                실패 시: 에러 메시지
+
+        Note:
+            - API 호출 timeout은 300초입니다.
+            - 응답은 JSON 형식이며 'answer' 키의 값을 반환합니다.
+        """
+        
         api_url = os.getenv("FINANCIAL_API_URL", "http://10.28.224.32:30800/api/query")
         try:
             response = requests.post(api_url, json={"query": query}, timeout=300)
@@ -53,10 +88,32 @@ class FinancialReportsAnalysisAgent(Node):
 
     def process(self, state: GraphState) -> GraphState:
         """
-        LangGraph에서 호출되는 메인 함수.
-        state에서 "company_name"과 "financial_query"를 읽어 쿼리를 구성하고 LLM 분석을 실행한 후,
-        결과를 state["financial_report"]에 저장합니다.
+        LangGraph 노드로서 증권사 리포트 분석을 수행합니다.
+
+        Args:
+            state (GraphState): 현재 그래프의 상태
+                필수 키:
+                - company_name: 분석할 기업명
+                선택 키:
+                - financial_query: 분석 요청 쿼리
+                    없을 경우 기본 쿼리 생성:
+                    "{company}의 증권 리포트를 분석하여 2025년 투자 전략 및 매매의견을 제시해 주세요."
+
+        Returns:
+            GraphState: 업데이트된 상태
+                추가되는 키:
+                - financial_report: 증권사 리포트 분석 결과
+                    포함 내용:
+                    - 증권사 및 날짜 정보
+                    - 목표주가 및 투자의견
+                    - 구체적인 투자 전략
+                    - 시장 인사이트
+
+        Note:
+            - company_name이 없을 경우 에러 메시지 반환
+            - 분석 결과는 'YYYY년도 MM월 DD일자 OO증권 레포트' 형식의 출처 정보를 포함
         """
+
         print(f"[{self.name}] process() 호출")
         
         # 회사명 필수 입력 확인

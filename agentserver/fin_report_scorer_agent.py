@@ -1,5 +1,3 @@
-# fin_report_scorer_agent.py
-
 import os
 import time
 import torch
