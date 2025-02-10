@@ -233,15 +233,46 @@ def dashboard_page():
                 report_content = filtered_reports[filtered_reports['task_id']
                                                   == selected_task_id]['report_generate'].values[0]
                 st.text_area("보고서 내용", report_content, height=400)
+        hoga = req.get_stock_hoga(stock_code)
 
-            # st.dataframe(
-            #     filtered_reports[['Date', 'Company', 'Investor Type']])
-            # selected_date = st.selectbox(
-            #     "열람할 보고서를 선택하세요", filtered_reports['created_at'] + ' ' + filtered_reports['stock_name'])
-            # if selected_date:
-            #     report_content = filtered_reports[filtered_reports['Date']
-            #                                       == selected_date]['Report'].values[0]
-            #     st.text_area("보고서 내용", report_content, height=400)
+        if hoga.status_code == 200:
+            print("호가 조회 성공")
+            hoga_result = hoga.json()
+            print(hoga_result)
+            converted_list = []
+
+            # {'company': 'CJ제일제당', 'code': '097950', 'timestamp': '160000', 'asks': [{'price': '250500', 'volume': '272'}, {'price': '251000', 'volume': '449'}, {'price': '251500', 'volume': '967'}, {'price': '252000', 'volume': '1449'}, {'price': '252500', 'volume': '944'}, {'price': '253000', 'volume': '1592'}, {'price': '253500', 'volume': '688'}, {'price': '254000', 'volume': '690'}, {'price': '254500', 'volume': '843'}, {'price': '255000', 'volume': '3993'}], 'bids': [{'price': '250000', 'volume': '6'}, {'price': '249500', 'volume': '378'}, {'price': '249000', 'volume': '4004'}, {'price': '248500', 'volume': '571'}, {'price': '248000', 'volume': '1490'}, {'price': '247500', 'volume': '133'}, {'price': '247000', 'volume': '111'}, {'price': '246500', 'volume': '84'}, {'price': '246000', 'volume': '1174'}, {'price': '245500', 'volume': '73'}], 'total_ask': '11887', 'total_bid': '8024'}
+
+            for hoga in zip(hoga_result['asks'], hoga_result['bids']):
+
+                converted_dict = {}
+                converted_dict['회사'] = hoga_result['company']
+                converted_dict['종목코드'] = hoga_result['code']
+                # 160151 형태의 시간을 16:01:51로 변환
+                converted_dict['시간'] = hoga_result['timestamp'][:2] + ':' + \
+                    hoga_result['timestamp'][2:4] + \
+                    ':' + hoga_result['timestamp'][4:]
+                converted_dict['매도호가'] = hoga[0]['price']
+                converted_dict['매도잔량'] = hoga[0]['volume']
+                converted_dict['매수호가'] = hoga[1]['price']
+                converted_dict['매수잔량'] = hoga[1]['volume']
+                converted_dict['총 매도잔량'] = hoga_result['total_ask']
+                converted_dict['총 매수잔량'] = hoga_result['total_bid']
+                converted_list.append(converted_dict)
+
+            st.dataframe(converted_list)
+        else:
+            st.error("호가 조회 실패")
+    else:
+        print("보고서 로그 조회 실패")
+        # st.dataframe(
+        #     filtered_reports[['Date', 'Company', 'Investor Type']])
+        # selected_date = st.selectbox(
+        #     "열람할 보고서를 선택하세요", filtered_reports['created_at'] + ' ' + filtered_reports['stock_name'])
+        # if selected_date:
+        #     report_content = filtered_reports[filtered_reports['Date']
+        #                                       == selected_date]['Report'].values[0]
+        #     st.text_area("보고서 내용", report_content, height=400)
 
     # if st.session_state.reports.empty:
     #     st.info("생성된 보고서가 없습니다.")
