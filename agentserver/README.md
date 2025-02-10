@@ -5,6 +5,8 @@ Multi-Agent 시스템을 활용하여 주식 투자 분석 및 매매 의견을 
 
 ## System Architecture
 
+![시스템 구조도](../docs/image.png)
+
 ### Core Integration Agent
 #### 전문가 의견 종합 전문가 (report_integration_agent)
 - 사용 모델: o1-mini
