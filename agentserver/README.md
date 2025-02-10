@@ -17,7 +17,7 @@ Multi-Agent 시스템을 활용하여 주식 투자 분석 및 매매 의견을 
 7. 최종 투자 의견 제시
 
 ---
-### Core Integration Agent
+### Core Integration Agent (1)
 
 #### 전문가 의견 종합 전문가 (report_integration_agent)
 - 사용 모델: o1-mini
@@ -26,7 +26,7 @@ Multi-Agent 시스템을 활용하여 주식 투자 분석 및 매매 의견을 
   - 상충되는 의견 조율 및 종합적 관점 제시
   - 최종 투자 리포트 생성
 ---
-### Specialized Analysis Agents
+### Specialized Analysis Agents (5)
 
 모든 하위 전문가는 GPT-4-mini 모델을 사용합니다.
 
@@ -64,7 +64,7 @@ Multi-Agent 시스템을 활용하여 주식 투자 분석 및 매매 의견을 
 
 ---
 
-### Quality Control System
+### Quality Control System (3)
 
 #### 1. 레포트 품질 평가 전문가 (fin_report_scorer_agent)
 
