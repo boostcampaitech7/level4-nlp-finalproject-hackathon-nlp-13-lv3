@@ -16,8 +16,9 @@
 ## **1.1 프로젝트 소개**
 
 ### **기획 배경**
-대부분 증권사 주식 리포트를 본다면 해당 기업의 매수/매도/목표가만 볼 것입니다. 그만큼 주식과 관련된 정보는 복잡하며 일반인은 빠르게 변하는 시장에 대응하기가 어렵습니다.<br>
-이에 "거시경제/미시경제/차트/뉴스 등 각 분야에 특화된 AI 에이전트를 만들고 복잡한 의사결정을 대신해줄 수는 없을까?" 라는 아이디어를 가지고 프로젝트를 기획하게 되었습니다.
+일반 투자자들은 대부분 증권사의 투자의견과 목표주가만을 참고합니다. 하지만 주식 시장은 이보다 훨씬 복잡한 시스템입니다. 기업의 내재가치, 시장심리, 거시경제 상황, 산업동향 등 **수많은 변수들이 서로 영향을 주고받으며 주가를 형성**하기 때문입니다. **특히, 개인 투자자의 경우에 이러한 다양한 변수들을 실시간으로 모니터링하고 투자 결정을 내리기가 매우 어렵습니다.** 거시경제 지표를 보더라도 환율, 금리, 원자재 가격 등의 상호 연관성을 파악하기가 쉽지 않습니다. 기업의 재무제표나 기술적 분석 또한 전문적인 지식이 필요합니다.<br>
+
+이러한 문제를 해결하기 위해서 "거시경제/미시경제/차트/뉴스 등 각 분야에 특화된 AI 에이전트를 만들고 **복잡한 의사결정을 대신해줄 수는 없을까?**" 라는 아이디어를 가지고 이 프로젝트를 시작하게 되었습니다.<br>
 
 ### **프로젝트 주제 및 주요 서비스**
 <div align='center'>
@@ -41,7 +42,7 @@
 | 김현서 [<img src="./docs/github_official_logo.png" width=18 style="vertical-align:middle;" />](https://github.com/kimhyeonseo0830) | 이재룡 [<img src="./docs/github_official_logo.png" width=18 style="vertical-align:middle;" />](https://github.com/So1pi) | 이정인 [<img src="./docs/github_official_logo.png" width=18 style="vertical-align:middle;" />](https://github.com/unsolomon) | 이현풍 [<img src="./docs/github_official_logo.png" width=18 style="vertical-align:middle;" />](https://github.com/P-oong) | 임한택 [<img src="./docs/github_official_logo.png" width=18 style="vertical-align:middle;" />](https://github.com/LHANTAEK) | 최현우 [<img src="./docs/github_official_logo.png" width=18 style="vertical-align:middle;" />](https://github.com/pica-git0) |
 |:---:|:---:|:---:|:---:|:---:|:---:|
 | ![김현서](https://avatars.githubusercontent.com/u/176917012?v=4) | ![이재룡](https://avatars.githubusercontent.com/u/173986541?v=4) | ![이정인](https://avatars.githubusercontent.com/u/180611698?v=4) | ![이현풍](https://avatars.githubusercontent.com/u/115058644?v=4) | ![임한택](https://avatars.githubusercontent.com/u/143519383) | ![최현우](https://avatars.githubusercontent.com/u/176974888?v=4) |
-| DB 설계<br>Reranking<br>Model & Prompt<br>Agent 설계 | DB 설계<br>Reranking<br>Model & Prompt | PDF 파싱<br>Embedding Test<br>Agent 설계 | PDF 파싱<br>Multi-Agent 설계<br>Reranking<br>Agent 설계 | 서비스 기획<br>PDF 파싱 및 청킹<br>RAG 고도화<br>Agent 구현<br>G-Eval Test<br>Model & Prompt | 서비스 기획<br>DB 설계<br>Embedding Test<br>정량 평가 API 배포<br>프론트엔드 개발<br>백엔드 개발 |
+| DB 설계<br>Reranking<br>Model & Prompt<br>Agent 설계 | DB 설계<br>Reranking<br>Model & Prompt | PDF 파싱<br>Embedding Test<br>Agent 설계 | PDF 파싱<br>Multi-Agent 설계<br>Reranking<br>Agent 설계 | 서비스 기획<br>PDF 파싱 및 청킹 고도화<br>RAG 고도화<br>Agent 구현<br>G-Eval Test<br>Model & Prompt | 서비스 기획<br>DB 설계<br>Embedding Test<br>정량 평가 API 배포<br>프론트엔드 개발<br>백엔드 개발 |
 
 ## **1.3 프로젝트 로드맵**
 ![PJ_timeline](./docs/PJ_timeline.png)
