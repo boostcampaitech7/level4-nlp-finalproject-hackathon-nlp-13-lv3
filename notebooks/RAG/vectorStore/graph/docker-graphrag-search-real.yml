@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  graphrag-app-data-real:
+    image: kim3008/real
+    container_name: graphrag-app-data-real
+    ports:
+      - "8051:8050"
+    volumes:
+      - ./graphrag_real:/data
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          memory: 2096M # 최대 512MB RAM 사용
+        reservations:
+          memory: 1024M # 최소 256MB RAM 예약
+    restart: unless-stopped
+## sudo chmod -R 775 ./faiss_data
